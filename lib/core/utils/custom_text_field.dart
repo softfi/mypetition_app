@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_petition_app/core/constants/app_text_styles.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
 
 class CustomTextField extends StatelessWidget {
   final String? label;

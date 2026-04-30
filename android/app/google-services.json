@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "754328539144",
+    "project_id": "mypetition-c5115",
+    "storage_bucket": "mypetition-c5115.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754328539144:android:dbd3365f905327cb0e41bd",
+        "android_client_info": {
+          "package_name": "com.softfix.mypetition"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSU_Wrjo1GtmEy_saqNwr9wUsl9KAoNMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

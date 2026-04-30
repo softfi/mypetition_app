@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_text_styles.dart';
 
-/// A reusable text widget that inherits the global Outfit font from the app theme.
-/// Pass a [style] to override size, weight, color, etc. — the Outfit font is
+/// A reusable text widget that inherits the global Inter font from the app theme.
+/// Pass a [style] to override size, weight, color, etc. — the Inter font is
 /// automatically applied through the global [ThemeData.textTheme].
-///
-///
-///
-///
-
-
-import 'package:flutter/material.dart';
 
 class AppText extends StatelessWidget {
   final String title;
@@ -32,16 +28,71 @@ class AppText extends StatelessWidget {
     required this.title,
     this.fontSize = 12,
     this.fontWeight,
-    this.height=1.3,
+    this.height = 1.3,
     this.color,
     this.textAlign,
     this.textOverflow,
     this.mandatory,
     this.decoration,
-    this.maxLines, this.fontFamily,
+    this.maxLines,
+    this.fontFamily,
     this.letterSpacing,
     this.fontStyle,
   });
+
+  // Named constructors for specific styles
+  const AppText.title({
+    super.key,
+    required this.title,
+    this.fontSize = 13,
+    this.fontWeight = FontWeight.w700,
+    this.color = AppColors.textPrimary,
+    this.height = 1.3,
+    this.textAlign,
+    this.textOverflow,
+    this.mandatory = false,
+    this.decoration,
+    this.maxLines,
+    this.fontFamily,
+    this.letterSpacing,
+    this.fontStyle,
+  });
+
+  const AppText.description({
+    super.key,
+    required this.title,
+    this.fontSize = 14,
+    this.fontWeight = FontWeight.w400,
+    this.color = AppColors.textSecondary,
+    this.height = 1.5,
+    this.textAlign,
+    this.textOverflow,
+    this.mandatory = false,
+    this.decoration,
+    this.maxLines,
+    this.fontFamily,
+    this.letterSpacing,
+    this.fontStyle,
+  });
+
+  const AppText.content({
+    super.key,
+    required this.title,
+    this.fontSize = 16,
+    this.fontWeight = FontWeight.w400,
+    this.color = AppColors.textPrimary,
+    this.height = 1.6,
+    this.textAlign,
+    this.textOverflow,
+    this.mandatory = false,
+    this.decoration,
+    this.maxLines,
+    this.fontFamily,
+    this.letterSpacing,
+    this.fontStyle,
+  });
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +103,11 @@ class AppText extends StatelessWidget {
           title,
           maxLines: maxLines,
           textAlign: textAlign,
-          style: TextStyle(
+          style: GoogleFonts.inter(
             height: height,
             color: color,
             fontSize: fontSize,
             fontWeight: fontWeight,
-            // fontFamily: fontFamily??'RethinkSans',
-            fontFamily: 'Inter',
-            overflow: textOverflow,
             decoration: decoration,
             letterSpacing: letterSpacing,
             fontStyle: fontStyle,
@@ -78,16 +126,13 @@ class AppText extends StatelessWidget {
       title,
       maxLines: maxLines,
       textAlign: textAlign,
-      style: TextStyle(
+      style: GoogleFonts.inter(
         color: color,
         fontSize: fontSize,
         decoration: decoration,
         fontWeight: fontWeight,
-        overflow: textOverflow,
-        fontFamily: 'Inter',
         letterSpacing: letterSpacing,
         fontStyle: fontStyle,
-        // fontFamily: 'RethinkSans',
       ),
     );
   }
@@ -95,36 +140,7 @@ class AppText extends StatelessWidget {
 
 
 
-// class AppText extends StatelessWidget {
-//   final String text;
-//   final TextStyle? style;
-//   final TextAlign? textAlign;
-//   final int? maxLines;
-//   final TextOverflow? overflow;
-//   final TextDirection? textDirection;
-//
-//   const AppText(
-//     this.text, {
-//     super.key,
-//     this.style,
-//     this.textAlign,
-//     this.maxLines,
-//     this.overflow,
-//     this.textDirection,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Text(
-//       text,
-//       style: style,
-//       textAlign: textAlign,
-//       maxLines: maxLines,
-//       overflow: overflow,
-//       textDirection: textDirection,
-//     );
-//   }
-// }
+
 
 
 

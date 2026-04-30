@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/custom_text.dart';
-import '../../../shared/widgets/custom_text_field.dart';
-import '../../../shared/widgets/custom_dropdown.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/controllers/profile_controller.dart';
+import 'package:my_petition_app/controllers/location_controller.dart';
+import 'dart:io';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/core/utils/custom_text_field.dart';
+import 'package:my_petition_app/core/utils/custom_dropdown.dart';
+import 'package:my_petition_app/features/location/models/location_models.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,31 +18,59 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final TextEditingController _nameController =
-      TextEditingController(text: 'Divyanshu Gupta');
-  final TextEditingController _emailController =
-      TextEditingController(text: '');
-  final TextEditingController _phoneController =
-      TextEditingController(text: '');
-  final TextEditingController _bioController1 = TextEditingController(
-      text: "I don't read news...");
-  final TextEditingController _bioController2 = TextEditingController(
-      text: 'I conquer 60 words at a time on My Petition');
+  late ProfileController _profileController;
+  late LocationController _locationController;
+  
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
 
-  String? _selectedState;
-  String? _selectedCity;
+  @override
+  void initState() {
+    super.initState();
+    _profileController = Get.find<ProfileController>();
+    _locationController = Get.find<LocationController>();
+    
+    final user = _profileController.currentUser;
+    _nameController = TextEditingController(text: user?.name ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
+    _phoneController = TextEditingController(text: user?.mobile ?? '');
+    
+    // Pre-select location if available
+    _initializeLocation();
+  }
 
-  // Dummy data for dropdowns
-  final List<String> _states = ['Maharashtra', 'Delhi', 'Karnataka', 'Gujarat'];
-  final List<String> _cities = ['Mumbai', 'Pune', 'Nagpur', 'New Delhi', 'Bengaluru'];
+  Future<void> _initializeLocation() async {
+    final user = _profileController.currentUser;
+    if (user == null) return;
+
+    // Ensure states are loaded
+    if (_locationController.stateModels.isEmpty) {
+      await _locationController.fetchStates();
+    }
+
+    if (user.stateId != null) {
+      final state = _locationController.stateModels.firstWhereOrNull((s) => s.id == user.stateId);
+      if (state != null) {
+        // selectState now fetches districts internally and can be awaited
+        await _locationController.selectState(state);
+        
+        // After selectState finishes, districts are loaded
+        if (user.cityId != null) {
+          final district = _locationController.districtModels.firstWhereOrNull((d) => d.id == user.cityId);
+          if (district != null) {
+            _locationController.selectDistrict(district);
+          }
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _bioController1.dispose();
-    _bioController2.dispose();
     super.dispose();
   }
 
@@ -70,114 +102,148 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 20),
             
             // Profile image with edit icon
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B0000),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.grey200, width: 3),
-                  ),
-                  child: const Center(
-                    child: AppText(
-                      title: 'DG',
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
+            Obx(() {
+              return Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  GestureDetector(
+                    onTap: () => _profileController.pickProfileImage(context),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B0000),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.grey200, width: 3),
+                        image: _profileController.profileImage != null
+                            ? DecorationImage(
+                                image: FileImage(_profileController.profileImage!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _profileController.profileImage == null
+                          ? Center(
+                              child: AppText(
+                                title: _getInitials(),
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.white,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
+                  GestureDetector(
+                    onTap: () => _profileController.pickProfileImage(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: AppColors.white,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    color: AppColors.white,
-                    size: 16,
-                  ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
             
             const SizedBox(height: 40),
 
             // Form Fields
-            _buildTextField('Full Name', _nameController, hintText: 'Enter your full name'),
+            CustomTextField(
+              label: 'Full Name',
+              hint: 'Enter your full name',
+              controller: _nameController,
+            ),
             const SizedBox(height: 20),
-            _buildTextField('Email Address', _emailController, hintText: 'Enter your email address', keyboardType: TextInputType.emailAddress),
+            CustomTextField(
+              label: 'Email Address',
+              hint: 'Enter your email address',
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+            ),
             const SizedBox(height: 20),
-            _buildTextField('Phone Number', _phoneController, hintText: 'Enter your phone number', keyboardType: TextInputType.phone),
+            CustomTextField(
+              label: 'Phone Number',
+              hint: 'Enter your phone number',
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              isReadOnly: true, // Mobile is verified, so keep it read-only
+            ),
             const SizedBox(height: 20),
-            Row(
+            
+            Obx(() => Row(
               children: [
                 Expanded(
-                  child: _buildDropdownField('State', _selectedState, _states, (value) {
-                    setState(() {
-                      _selectedState = value;
-                    });
-                  }),
+                  child: SingleSelectionDropdown<StateModel>(
+                    title: 'State',
+                    selectedValue: _locationController.selectedState,
+                    items: _locationController.stateModels,
+                    isLoading: _locationController.isStatesLoading,
+                    onSelectionChanged: (value) => _locationController.selectState(value),
+                    getId: (s) => s.id.toString(),
+                    getName: (s) => s.name,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _buildDropdownField('City', _selectedCity, _cities, (value) {
-                    setState(() {
-                      _selectedCity = value;
-                    });
-                  }),
+                  child: SingleSelectionDropdown<DistrictModel>(
+                    title: 'City',
+                    selectedValue: _locationController.selectedDistrict,
+                    items: _locationController.districtModels,
+                    isLoading: _locationController.isDistrictsLoading,
+                    isActive: _locationController.selectedState != null,
+                    onSelectionChanged: (value) => _locationController.selectDistrict(value),
+                    getId: (s) => s.id.toString(),
+                    getName: (s) => s.name,
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 20),
-            _buildTextField('Bio Line 1', _bioController1, hintText: 'Enter a short bio'),
-            const SizedBox(height: 20),
-            _buildTextField('Bio Line 2', _bioController2, maxLines: 2, hintText: 'Tell us more about yourself'),
-
+            )),
+            
             const SizedBox(height: 50),
 
             // Save Button
-            CustomButton(
+            Obx(() => CustomButton(
               text: 'Save Changes',
               height: 48,
               borderRadius: 12,
               backgroundColor: AppColors.accent,
-              onPressed: () {
-                // Save logic here
-                Navigator.pop(context);
+              isLoading: _profileController.isSubmitting,
+              onPressed: () async {
+                final success = await _profileController.updateProfile(
+                  name: _nameController.text.trim(),
+                  email: _emailController.text.trim(),
+                  stateId: _locationController.selectedState?.id,
+                  districtId: _locationController.selectedDistrict?.id,
+                );
+                
+                if (success) {
+                  Navigator.pop(context);
+                }
               },
-            ),
+            )),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {int maxLines = 1, TextInputType? keyboardType, String? hintText}) {
-    return CustomTextField(
-      label: label,
-      hint: hintText ?? '',
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-    );
-  }
-
-  Widget _buildDropdownField(String label, String? selectedValue,
-      List<String> items, ValueChanged<String?> onChanged) {
-    return SingleSelectionDropdown<String>(
-      title: label,
-      selectedValue: selectedValue,
-      items: items,
-      onSelectionChanged: onChanged,
-      getId: (s) => s,
-      getName: (s) => s,
-    );
+  String _getInitials() {
+    final user = _profileController.currentUser;
+    if (user == null || user.name == null || user.name!.isEmpty) return 'U';
+    
+    List<String> names = user.name!.split(" ");
+    if (names.length > 1) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return names[0][0].toUpperCase();
   }
 }
 

@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_assets.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/custom_button.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:my_petition_app/core/constants/app_assets.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_text_styles.dart';
+import 'package:my_petition_app/core/routes/app_routes.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/controllers/discover_controller.dart';
+import 'package:my_petition_app/core/utils/date_formatter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:my_petition_app/core/models/insight_model.dart';
+import 'package:my_petition_app/core/models/petition_model.dart';
+import 'package:my_petition_app/core/models/category_model.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:my_petition_app/core/config/app_urls.dart';
+import 'package:my_petition_app/controllers/auth_controller.dart';
+import 'package:my_petition_app/controllers/profile_controller.dart';
+import 'package:my_petition_app/core/utils/guest_dialog.dart';
 
-class DiscoverScreen extends StatelessWidget {
+class DiscoverScreen extends GetView<DiscoverController> {
   const DiscoverScreen({super.key});
 
   @override
@@ -14,165 +28,278 @@ class DiscoverScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText(
-                      title: AppStrings.create,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                    AppText(
-                      title: AppStrings.discover,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    AppText(
-                      title: 'My Feed >',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: AppColors.grey200),
-                  ),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await controller.fetchNews();
+            await controller.fetchInsights();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.search, color: AppColors.grey400, size: 20),
-                      const SizedBox(width: 10),
                       AppText(
-                        title: AppStrings.searchForNews,
+                        title: AppStrings.create,
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textHint,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                      AppText(
+                        title: AppStrings.discover,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      AppText(
+                        title: 'My Feed >',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
-
-              // Category tabs
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildCategoryTab(Icons.dynamic_feed_outlined, AppStrings.myFeed, true),
-                    _buildCategoryTab(Icons.add_box_outlined, AppStrings.petitions, false),
-                    _buildCategoryTab(Icons.auto_stories_outlined, AppStrings.story, false),
-                    _buildCategoryTab(Icons.trending_up, AppStrings.trending, false),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Petitions section header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText(
-                      title: AppStrings.petitions,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                    AppText(
-                      title: AppStrings.viewAll,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accent,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Petition card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildPetitionCard(),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Insights section header
-              _buildSectionHeader(AppStrings.insights),
-
-              const SizedBox(height: 16),
-
-              // Insights horizontal list
-              SizedBox(
-                height: 160,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
+                // Search bar
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _buildInsightImage(AppAssets.insightNews1),
-                    const SizedBox(width: 12),
-                    _buildInsightImage(AppAssets.insightNews2),
-                    const SizedBox(width: 12),
-                    _buildInsightImage(AppAssets.homePetition), // Placeholder
-                    const SizedBox(width: 12),
-                    _buildInsightImage(AppAssets.discoverPetition), // Placeholder
-                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: AppColors.grey200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, color: AppColors.grey400, size: 20),
+                        const SizedBox(width: 10),
+                        AppText(
+                          title: AppStrings.searchForNews,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textHint,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
-              // Latest News section header
-              _buildSectionHeader(AppStrings.latestNews),
+                // Category tabs
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildCategoryTab(Icons.dynamic_feed_outlined, AppStrings.myFeed, true),
+                      _buildCategoryTab(Icons.add_box_outlined, AppStrings.petitions, false),
+                      _buildCategoryTab(Icons.auto_stories_outlined, AppStrings.story, false),
+                      _buildCategoryTab(Icons.trending_up, AppStrings.trending, false),
+                    ],
+                  ),
+                ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 24),
 
-              // News list items
-              _buildNewsListItem(
-                  'Travis Scott punches sound engineer, causes ₹10 lakh worth of damage at New York club',
-                  AppAssets.insightNews1),
-              _buildNewsListItem(
-                  'Travis Scott punches sound engineer, causes ₹10 lakh worth of damage at New York club',
-                  AppAssets.insightNews2),
-              _buildNewsListItem(
-                  'Travis Scott punches sound engineer, causes ₹10 lakh worth of damage at New York club',
-                  AppAssets.homePetition),
+                // Petitions section header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      AppText(
+                        title: AppStrings.petitions,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                      GestureDetector(
+                        onTap: () => Get.toNamed(AppRoutes.petitionsViewAll),
+                        child: AppText(
+                          title: AppStrings.viewAll,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-              const SizedBox(height: 100),
-            ],
+                const SizedBox(height: 12),
+
+                // Petition card
+                Obx(() {
+                  if (controller.isPetitionsLoading.value && controller.petitionsList.isEmpty) {
+                    return Shimmer.fromColors(
+                      baseColor: AppColors.grey200,
+                      highlightColor: AppColors.grey100,
+                      child: Container(
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (controller.petitionsList.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final petition = controller.petitionsList.first;
+                  return GestureDetector(
+                    onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug),
+                    child: _buildPetitionCard(petition),
+                  );
+                }),
+
+                const SizedBox(height: 32),
+
+                // Insights section header
+                _buildSectionHeader(AppStrings.insights, () {
+                  Get.toNamed(AppRoutes.insightsViewAll);
+                }),
+
+                const SizedBox(height: 16),
+
+                // Insights horizontal list
+                SizedBox(
+                  height: 160,
+                  child: Obx(() {
+                    if (controller.isInsightsLoading.value && controller.insightsList.isEmpty) {
+                      return _buildInsightShimmer();
+                    }
+                    if (controller.insightsList.isEmpty) {
+                      return Center(
+                        child: AppText(title: 'No insights available'),
+                      );
+                    }
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: controller.insightsList.length > 5 ? 5 : controller.insightsList.length,
+                      itemBuilder: (context, index) {
+                        final insight = controller.insightsList[index];
+                        String? imageUrl;
+                        if (insight.files.isNotEmpty) {
+                          imageUrl = '${AppUrls.s3BaseUrl}${insight.files[0].s3ImageUrl}';
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () => Get.toNamed(AppRoutes.insightDetail, arguments: insight.slug),
+                            child: _buildInsightImage(imageUrl, insight.title, insight.createdAt),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Latest News section header
+                _buildSectionHeader(AppStrings.latestNews, () {
+                  Get.toNamed(AppRoutes.newsViewAll);
+                }),
+
+                const SizedBox(height: 12),
+
+                // Category Tabs for News
+                SizedBox(
+                  height: 40,
+                  child: Obx(() {
+                    // Access the value here to ensure Obx listens to changes
+                    final selectedId = controller.selectedNewsCategoryId.value;
+                    
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: controller.categoriesList.length + 1,
+                      itemBuilder: (context, index) {
+                        final bool isAll = index == 0;
+                        final category = isAll ? null : controller.categoriesList[index - 1];
+                        final categoryId = isAll ? -1 : category!.id;
+                        final isSelected = selectedId == categoryId;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: () => controller.setNewsCategory(categoryId),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: isSelected ? AppColors.accent : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: AppText(
+                                title: isAll ? 'All' : category!.name,
+                                fontSize: 13,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                                color: isSelected ? AppColors.accent : AppColors.textHint,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 16),
+
+                // News list items
+                Obx(() {
+                  if (controller.isNewsLoading.value && controller.newsList.isEmpty) {
+                    return _buildNewsShimmer();
+                  }
+                  if (controller.newsList.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Center(
+                        child: AppText(title: 'No news available'),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: controller.newsList.asMap().entries.take(5).map((entry) {
+                      final index = entry.key;
+                      final news = entry.value;
+                      final imageUrl = '${AppUrls.s3BaseUrl}${news.s3ImageUrl}';
+                      return _buildNewsListItem(news.title, imageUrl, news.slug, news.createdAt, index);
+                    }).toList(),
+                  );
+                }),
+
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, VoidCallback onViewAll) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -195,11 +322,14 @@ class DiscoverScreen extends StatelessWidget {
               ),
             ],
           ),
-          AppText(
-            title: AppStrings.viewAll.toUpperCase(),
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: AppColors.accent,
+          GestureDetector(
+            onTap: onViewAll,
+            child: AppText(
+              title: AppStrings.viewAll.toUpperCase(),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.accent,
+            ),
           ),
         ],
       ),
@@ -236,16 +366,19 @@ class DiscoverScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPetitionCard() {
+  Widget _buildPetitionCard(PetitionModel petition) {
+    final imageUrl = '${AppUrls.s3BaseUrl}${petition.s3ImageUrl}';
+
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppColors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -258,15 +391,18 @@ class DiscoverScreen extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               height: 160,
-              child: Image.asset(
-                AppAssets.discoverPetition,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.grey200,
-                    child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
-                  );
-                },
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: AppColors.grey200,
+                  highlightColor: AppColors.grey100,
+                  child: Container(color: AppColors.white),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: AppColors.grey200,
+                  child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
+                ),
               ),
             ),
           ),
@@ -277,15 +413,17 @@ class DiscoverScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText(
-                  title: 'Travis Scott punches sound engineer, causes ₹10 lakh worth of damage at New York club',
+                  title: petition.title,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                   height: 1.4,
+                  maxLines: 2,
+                  textOverflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 AppText(
-                  title: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry\'s. Lorem55555 New...',
+                  title: petition.description,
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
                   color: AppColors.textHint,
@@ -296,45 +434,68 @@ class DiscoverScreen extends StatelessWidget {
                 const SizedBox(height: 14),
 
                 // Sign and Object buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomButton(
-                        text: AppStrings.signPetition,
-                        height: 36,
-                        borderRadius: 18,
-                        backgroundColor: AppColors.accent,
-                        fontSize: 12,
-                        isFullWidth: true,
-                        onPressed: () {},
+                Obx(() {
+                  final authController = Get.find<AuthController>();
+                  final profileController = Get.find<ProfileController>();
+                  final user = profileController.currentUser;
+                  
+                  // If verified, hide these buttons as per request
+                  if (user != null && user.isEmailVerified) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: AppStrings.signPetition,
+                          height: 36,
+                          borderRadius: 18,
+                          backgroundColor: AppColors.accent,
+                          fontSize: 12,
+                          isFullWidth: true,
+                          onPressed: () {
+                            if (authController.isGuest) {
+                              GuestDialog.showLoginPrompt();
+                            } else {
+                              Get.toNamed(AppRoutes.emailVerify);
+                            }
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: CustomButton(
-                        text: AppStrings.objectPetition,
-                        type: CustomButtonType.outlined,
-                        height: 36,
-                        borderRadius: 18,
-                        borderColor: AppColors.grey300,
-                        textColor: AppColors.textPrimary,
-                        fontSize: 12,
-                        isFullWidth: true,
-                        onPressed: () {},
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: CustomButton(
+                          text: AppStrings.objectPetition,
+                          type: CustomButtonType.outlined,
+                          height: 36,
+                          borderRadius: 18,
+                          borderColor: AppColors.grey300,
+                          textColor: AppColors.textPrimary,
+                          fontSize: 12,
+                          isFullWidth: true,
+                          onPressed: () {
+                            if (authController.isGuest) {
+                              GuestDialog.showLoginPrompt();
+                            } else {
+                              Get.toNamed(AppRoutes.emailVerify);
+                            }
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
 
                 const SizedBox(height: 12),
 
                 // Progress indicator
                 Row(
                   children: [
-                    const Icon(Icons.flag_outlined, size: 14, color: AppColors.grey400),
+                    const Icon(Icons.how_to_vote, size: 14, color: AppColors.grey400),
                     const SizedBox(width: 6),
                     AppText(
-                      title: 'Add Your 100 ER Signature to reach The...',
+                      title: '${petition.voteCount} total votes collected',
                       fontSize: 10,
                       fontWeight: FontWeight.w400,
                       color: AppColors.textHint,
@@ -349,66 +510,196 @@ class DiscoverScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInsightImage(String imagePath) {
+  Widget _buildInsightImage(String? imageUrl, String title, DateTime date) {
     return Container(
       width: 110,
       decoration: BoxDecoration(
         color: AppColors.grey200,
         borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageUrl != null)
+              CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: AppColors.grey200,
+                  highlightColor: AppColors.grey100,
+                  child: Container(color: AppColors.white),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              )
+            else
+              const Icon(Icons.image, color: AppColors.grey400),
+
+            
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.8),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: AppText(
+                  title: AppDateFormatter.formatShortDate(date),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNewsListItem(String title, String imagePath) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: AppText(
-                  title: title,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                  height: 1.4,
-                  maxLines: 2,
-                  textOverflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Thumbnail
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.grey200,
-                        child: const Icon(Icons.image, size: 24, color: AppColors.grey400),
-                      );
-                    },
+  Widget _buildNewsListItem(String title, String imageUrl, String slug, DateTime date, int index) {
+    return InkWell(
+      onTap: () {
+        Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': slug});
+      },
+
+
+
+
+
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.title(
+                        title: title,
+                        // fontSize: 12,
+                        maxLines: 2,
+                        textOverflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.access_time, size: 10, color: AppColors.black),
+                          const SizedBox(width: 4),
+                          AppText(
+                            title: AppDateFormatter.formatDateTime(date),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textHint,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                /// isme dekho image me dekho jo latest nes hai is row ke neeche tumhe categories api call krke show krni hai aise hi tabs form me aur inke click per jo news api hai use dekho filter query params me filte jayega jo maine diya hai to vo category ke cick pe risi me news list aani cahhiye ok api se ok ayr agar view all new me  me vha per category ko show krn ahi isi trahse aur flow bhi yahi rahega
+                const SizedBox(width: 16),
+                // Thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Shimmer.fromColors(
+                        baseColor: AppColors.grey200,
+                        highlightColor: AppColors.grey100,
+                        child: Container(color: AppColors.white),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: AppColors.grey200,
+                        child: const Icon(Icons.image, size: 24, color: AppColors.grey400),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(color: AppColors.grey200, height: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightShimmer() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 5,
+      itemBuilder: (context, index) => Shimmer.fromColors(
+        baseColor: AppColors.grey200,
+        highlightColor: AppColors.grey100,
+        child: Container(
+          width: 110,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Divider(color: AppColors.grey200, height: 1),
+      ),
+    );
+  }
+
+  Widget _buildNewsShimmer() {
+    return Column(
+      children: List.generate(3, (index) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Shimmer.fromColors(
+                    baseColor: AppColors.grey200,
+                    highlightColor: AppColors.grey100,
+                    child: Container(height: 12, color: AppColors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Shimmer.fromColors(
+                    baseColor: AppColors.grey200,
+                    highlightColor: AppColors.grey100,
+                    child: Container(height: 12, width: 150, color: AppColors.white),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Shimmer.fromColors(
+              baseColor: AppColors.grey200,
+              highlightColor: AppColors.grey100,
+              child: Container(width: 64, height: 64, decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(8))),
+            ),
+          ],
         ),
-      ],
+      )),
     );
   }
 }
+

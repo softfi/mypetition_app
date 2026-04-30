@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/constants/app_colors.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
 
 enum CustomButtonType { filled, outlined, text }
 
@@ -199,47 +199,51 @@ class CustomButton extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    if (isLoading) {
-      return SizedBox(
-        height: loadingSize,
-        width: loadingSize,
-        child: CircularProgressIndicator(
-          color: loadingColor ??
-              (type == CustomButtonType.filled
-                  ? AppColors.white
-                  : AppColors.primary),
-          strokeWidth: loadingStrokeWidth,
-        ),
-      );
-    }
-
-    final textWidget = AppText(
-      title: text,
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      color: textColor ??
-          (type == CustomButtonType.filled ? AppColors.white : AppColors.primary),
-    );
-
-
-    if (prefixIcon == null && suffixIcon == null) {
-      return textWidget;
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (prefixIcon != null) ...[
-          Icon(prefixIcon, size: iconSize),
-          SizedBox(width: iconSpacing),
-        ],
-        textWidget,
-        if (suffixIcon != null) ...[
-          SizedBox(width: iconSpacing),
-          Icon(suffixIcon, size: iconSize),
-        ],
-      ],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      child: isLoading
+          ? Center(
+              key: const ValueKey('loading'),
+              child: SizedBox(
+                height: loadingSize,
+                width: loadingSize,
+                child: CircularProgressIndicator(
+                  color: loadingColor ??
+                      (type == CustomButtonType.filled
+                          ? AppColors.white
+                          : AppColors.primary),
+                  strokeWidth: loadingStrokeWidth,
+                  strokeCap: StrokeCap.round,
+                ),
+              ),
+            )
+          : Row(
+              key: const ValueKey('content'),
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (prefixIcon != null) ...[
+                  Icon(prefixIcon, size: iconSize),
+                  SizedBox(width: iconSpacing),
+                ],
+                AppText(
+                  title: text,
+                  fontSize: fontSize,
+                  fontWeight: fontWeight,
+                  color: textColor ??
+                      (type == CustomButtonType.filled
+                          ? AppColors.white
+                          : AppColors.primary),
+                ),
+                if (suffixIcon != null) ...[
+                  SizedBox(width: iconSpacing),
+                  Icon(suffixIcon, size: iconSize),
+                ],
+              ],
+            ),
     );
   }
 }

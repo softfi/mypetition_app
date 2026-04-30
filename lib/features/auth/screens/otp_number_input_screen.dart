@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/constants/app_assets.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/custom_text_field.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/core/constants/app_assets.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_text_styles.dart';
+import 'package:my_petition_app/core/routes/app_routes.dart';
+import '../../../controllers/auth_controller.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text_field.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
 
 class OtpNumberInputScreen extends StatefulWidget {
   const OtpNumberInputScreen({super.key});
@@ -25,6 +26,8 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
     _phoneController.dispose();
     super.dispose();
   }
+
+  // isme
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,7 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        // Skip OTP verification
+                        Get.find<AuthController>().skipAuth();
                       },
                       child: AppText(
                         title: AppStrings.skip,
@@ -137,26 +140,24 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
 
                   const SizedBox(height: 40),
 
+
                   // Continue button
-                  Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      return CustomButton(
-                        text: AppStrings.continueText,
-                        isLoading: authProvider.isLoading,
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            authProvider
-                                .setPhoneNumber(_phoneController.text);
-                            await authProvider.sendOtp();
-                            if (context.mounted) {
-                              Navigator.pushNamed(
-                                  context, '/otp-verify');
-                            }
+                  Obx(() {
+                    final authController = Get.find<AuthController>();
+                    return CustomButton(
+                      text: AppStrings.continueText,
+                      isLoading: authController.isLoading,
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          authController.setPhoneNumber(_phoneController.text);
+                          final success = await authController.sendOtp();
+                          if (success) {
+                            Get.toNamed(AppRoutes.otpVerify);
                           }
-                        },
-                      );
-                    },
-                  ),
+                        }
+                      },
+                    );
+                  }),
 
                   const SizedBox(height: 32),
                 ],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'custom_text.dart';
 
 class SingleSelectionDropdown<T> extends StatefulWidget {
@@ -37,7 +37,10 @@ class SingleSelectionDropdown<T> extends StatefulWidget {
     this.selectType,
     this.isError,
     this.errorText,
+    this.isLoading = false,
   });
+
+  final bool isLoading;
 
   @override
   State<SingleSelectionDropdown<T>> createState() =>
@@ -50,6 +53,7 @@ class _SingleSelectionDropdownState<T>
   bool _isExpanded = false;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final OverlayPortalController _tooltipController = OverlayPortalController();
   final _link = LayerLink();
 
@@ -69,6 +73,22 @@ class _SingleSelectionDropdownState<T>
             widget.getName(item).toLowerCase().contains(query))
             .toList();
       });
+    });
+
+    _searchFocusNode.addListener(() {
+      if (_searchFocusNode.hasFocus) {
+        // When search field is clicked and keyboard opens, scroll into view
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 300),
+              alignment: 0.1, // Scroll even higher to clear the keyboard
+              curve: Curves.easeInOut,
+            );
+          }
+        });
+      }
     });
   }
 
@@ -91,6 +111,7 @@ class _SingleSelectionDropdownState<T>
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -100,6 +121,7 @@ class _SingleSelectionDropdownState<T>
       _isExpanded = false;
       _tooltipController.hide();
       _searchController.clear();
+      _searchFocusNode.unfocus();
       filteredItems = widget.items;
     });
     widget.onSelectionChanged(item);
@@ -182,7 +204,8 @@ class _SingleSelectionDropdownState<T>
                             // Search Field
                             TextField(
                               controller: _searchController,
-                              autofocus: true,
+                              focusNode: _searchFocusNode,
+                              autofocus: false,
                               decoration: InputDecoration(
                                 hintText:
                                     "Search ${widget.title ?? widget.selectType ?? ""}",
@@ -277,6 +300,20 @@ class _SingleSelectionDropdownState<T>
                           _isExpanded = !_isExpanded;
                           _tooltipController.toggle();
                         });
+
+                        if (_isExpanded) {
+                          // Scroll into view if opened
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) {
+                              Scrollable.ensureVisible(
+                                context,
+                                duration: const Duration(milliseconds: 300),
+                                alignment: 0.2,
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          });
+                        }
                       }
                     : null,
                 child: Container(
@@ -306,7 +343,16 @@ class _SingleSelectionDropdownState<T>
                               : Colors.black,
                         ),
                       ),
-                      if (widget.dropdownIcon)
+                      if (widget.isLoading)
+                        const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.green,
+                          ),
+                        )
+                      else if (widget.dropdownIcon)
                         Icon(
                           _isExpanded
                               ? Icons.keyboard_arrow_up

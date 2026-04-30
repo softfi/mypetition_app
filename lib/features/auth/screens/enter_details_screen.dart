@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/custom_text_field.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/utils/custom_text_field.dart';
+import 'package:my_petition_app/controllers/profile_controller.dart';
+import 'package:my_petition_app/core/routes/app_routes.dart';
 
 class EnterDetailsScreen extends StatefulWidget {
   const EnterDetailsScreen({super.key});
@@ -18,6 +20,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isTermsAccepted = false;
+  final ProfileController _profileController = Get.find<ProfileController>();
 
   @override
   void dispose() {
@@ -88,7 +91,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Email label
+                  // Email label (Optional)
                   AppText(
                     title: AppStrings.enterYourEmail,
                     fontSize: 13,
@@ -97,21 +100,11 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                   ),
                   const SizedBox(height: 8),
 
-
                   // Email field
                   CustomTextField(
                     hint: AppStrings.enterYourEmailHint,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
                   ),
 
                   const SizedBox(height: 24),
@@ -152,19 +145,26 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                   const SizedBox(height: 40),
 
                   // Continue button
-                  CustomButton(
+                  Obx(() => CustomButton(
                     text: AppStrings.continueText,
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() &&
-                          _isTermsAccepted) {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/main',
-                          (route) => false,
+                    isLoading: _profileController.isSubmitting,
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        if (!_isTermsAccepted) {
+                          Get.snackbar("Terms & Conditions", "Please accept terms and conditions");
+                          return;
+                        }
+                        
+                        final success = await _profileController.updateProfile(
+                          name: _nameController.text.trim(),
                         );
+                        
+                        if (success) {
+                          Get.offAllNamed(AppRoutes.main);
+                        }
                       }
                     },
-                  ),
+                  )),
 
                   const SizedBox(height: 32),
                 ],

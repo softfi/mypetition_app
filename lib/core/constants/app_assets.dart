@@ -2,6 +2,10 @@ class AppAssets {
   AppAssets._();
 
   static const String _imagesPath = 'assets/images';
+  
+  static const String logo = '$_imagesPath/logo.png';
+
+
 
   // Login Grid Images
   static const String loginGrid1 = '$_imagesPath/login_grid_1.png';

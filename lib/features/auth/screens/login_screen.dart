@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_assets.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/custom_button.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:my_petition_app/core/constants/app_assets.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/controllers/auth_controller.dart';
+import 'package:my_petition_app/core/routes/app_routes.dart';
 
+// / acha isme api call service ke liye ek alag se api response sanitizer file banao jisse ki har api call respoen proper sanitize hoker mugeh mile taaki app api respoen kabhi crash na ho chahe null check , emply , blank etcc jitne bhi api crashes ho skte hia sabke liye ek sanitizer banao taaki app me kabhi red screen na dikhr koi error na aye proper professional ki trah se
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -63,7 +66,9 @@ class LoginScreen extends StatelessWidget {
                 CustomButton(
                   text: AppStrings.signUp,
                   onPressed: () {
-                    Navigator.pushNamed(context, '/otp-input');
+                    final authController = Get.find<AuthController>();
+                    authController.setIsLogin(false);
+                    Get.toNamed(AppRoutes.otpInput);
                   },
                 ),
 
@@ -74,8 +79,27 @@ class LoginScreen extends StatelessWidget {
                   text: AppStrings.logIn,
                   type: CustomButtonType.outlined,
                   onPressed: () {
-                    Navigator.pushNamed(context, '/otp-input');
+                    final authController = Get.find<AuthController>();
+                    authController.setIsLogin(true);
+                    Get.toNamed(AppRoutes.otpInput);
                   },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Skip Button
+                TextButton(
+                  onPressed: () => Get.find<AuthController>().skipAuth(),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                  child: AppText(
+                    title: 'Skip and Browse as Guest',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textHint,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
 
                 const SizedBox(height: 32),
@@ -89,7 +113,7 @@ class LoginScreen extends StatelessWidget {
 
   Widget _buildLogo() {
     return Image.asset(
-      'assets/images/logo.png',
+      AppAssets.logo,
       height: 80, // Adjust size as necessary
     );
   }

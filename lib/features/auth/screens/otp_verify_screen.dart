@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import '../../../core/constants/app_assets.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/custom_button.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:my_petition_app/core/constants/app_assets.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_text_styles.dart';
+import '../../../controllers/auth_controller.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
 
 class OtpVerifyScreen extends StatefulWidget {
   const OtpVerifyScreen({super.key});
@@ -93,7 +93,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     obscureText: false,
                     animationType: AnimationType.fade,
                     keyboardType: TextInputType.number,
-                    textStyle: GoogleFonts.outfit(
+                    textStyle: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -115,7 +115,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     enableActiveFill: true,
                     onChanged: (value) {
                       _otpValue = value;
-                      context.read<AuthProvider>().setOtp(value);
+                      Get.find<AuthController>().setOtp(value);
                     },
                     onCompleted: (value) {
                       _otpValue = value;
@@ -126,24 +126,18 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                 const SizedBox(height: 36),
 
                 // Continue button
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    return CustomButton(
-                      text: AppStrings.continueText,
-                      isLoading: authProvider.isLoading,
-                      onPressed: () async {
-                        if (_otpValue.length == 4) {
-                          final success =
-                              await authProvider.verifyOtp();
-                          if (success && context.mounted) {
-                            Navigator.pushNamed(
-                                context, '/location');
-                          }
-                        }
-                      },
-                    );
-                  },
-                ),
+                Obx(() {
+                  final authController = Get.find<AuthController>();
+                  return CustomButton(
+                    text: AppStrings.continueText,
+                    isLoading: authController.isLoading,
+                    onPressed: () async {
+                      if (_otpValue.length == 4) {
+                        await authController.verifyOtp();
+                      }
+                    },
+                  );
+                }),
 
                 const SizedBox(height: 24),
 
@@ -159,7 +153,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        context.read<AuthProvider>().resendOtp();
+                        Get.find<AuthController>().resendOtp();
                       },
                       child: AppText(
                         title: AppStrings.resend,

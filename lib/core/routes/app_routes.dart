@@ -6,6 +6,13 @@ import '../../features/auth/screens/otp_verify_screen.dart';
 import '../../features/location/screens/enter_location_screen.dart';
 import '../../features/auth/screens/enter_details_screen.dart';
 import '../../features/navigation/main_shell.dart';
+import '../../features/discover/news_detail_screen.dart';
+import '../../features/discover/news_view_all_screen.dart';
+import '../../features/discover/insights_view_all_screen.dart';
+import '../../features/discover/insight_detail_screen.dart';
+import '../../features/discover/petitions_view_all_screen.dart';
+import '../../features/discover/petition_detail_screen.dart';
+import '../../features/auth/screens/email_verify_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -17,6 +24,13 @@ class AppRoutes {
   static const String location = '/location';
   static const String enterDetails = '/enter-details';
   static const String main = '/main';
+  static const String newsDetail = '/news-detail';
+  static const String emailVerify = '/email-verify';
+  static const String newsViewAll = '/news-view-all';
+  static const String insightsViewAll = '/insights-view-all';
+  static const String insightDetail = '/insight-detail';
+  static const String petitionsViewAll = '/petitions-view-all';
+  static const String petitionDetail = '/petition-detail';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -34,6 +48,20 @@ class AppRoutes {
         return _buildRoute(const EnterDetailsScreen(), settings);
       case main:
         return _buildRoute(const MainShell(), settings);
+      case newsDetail:
+        return _buildRoute(const NewsDetailScreen(), settings);
+      case emailVerify:
+        return _buildRoute(const EmailVerifyScreen(), settings);
+      case newsViewAll:
+        return _buildRoute(const NewsViewAllScreen(), settings);
+      case insightsViewAll:
+        return _buildRoute(const InsightsViewAllScreen(), settings);
+      case insightDetail:
+        return _buildRoute(const InsightDetailScreen(), settings);
+      case petitionsViewAll:
+        return _buildRoute(const PetitionsViewAllScreen(), settings);
+      case petitionDetail:
+        return _buildRoute(const PetitionDetailScreen(), settings);
       default:
         return _buildRoute(const SplashScreen(), settings);
     }

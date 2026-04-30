@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_assets.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/custom_button.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
-import 'package:my_petition_app/shared/widgets/custom_text_field.dart';
+import 'package:my_petition_app/core/constants/app_assets.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_text_styles.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/core/utils/custom_text_field.dart';
 
 class PetitionDetailScreen extends StatefulWidget {
   const PetitionDetailScreen({super.key});

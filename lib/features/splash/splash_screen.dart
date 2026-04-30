@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../providers/splash_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import '../../controllers/splash_controller.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Initialize splash logic and navigate to the next screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
-      context.read<SplashProvider>().initialize(context);
+      Get.find<SplashController>().initialize();
     });
   }
 

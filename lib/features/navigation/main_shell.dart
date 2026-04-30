@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
 import '../discover/discover_screen.dart';
 import '../home/home_screen.dart';
 import '../home/petition_detail_screen.dart';
 import '../profile/profile_screen.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -16,7 +16,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 2;
+  int _currentIndex = 0;
   bool _isNavHidden = false;
 
   late final AnimationController _navController;
@@ -79,11 +79,12 @@ class _MainShellState extends State<MainShell>
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     // Total nav bar visual height (item row + safe area bottom)
-    const double navRowHeight = 58.0;
+    const double navRowHeight = 88.0;
     final double navTotalHeight = navRowHeight + bottomPadding;
 
     return Scaffold(

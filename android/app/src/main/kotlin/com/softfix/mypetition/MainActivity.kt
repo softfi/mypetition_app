@@ -1,4 +1,4 @@
-package com.softfix.my_petition
+package com.softfix.mypetition
 
 import android.os.Build
 import android.os.Bundle

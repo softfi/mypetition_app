@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../providers/location_provider.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/custom_dropdown.dart';
-import 'package:my_petition_app/shared/widgets/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/core/constants/app_colors.dart';
+import 'package:my_petition_app/core/constants/app_strings.dart';
+import 'package:my_petition_app/core/constants/app_text_styles.dart';
+import '../../../controllers/location_controller.dart';
+import '../models/location_models.dart';
+import 'package:my_petition_app/core/utils/custom_button.dart';
+import 'package:my_petition_app/core/utils/custom_dropdown.dart';
+import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:my_petition_app/core/utils/toast_message.dart';
 
 class EnterLocationScreen extends StatelessWidget {
   const EnterLocationScreen({super.key});
@@ -67,71 +69,59 @@ class EnterLocationScreen extends StatelessWidget {
                 const SizedBox(height: 40),
 
                 // Select State
-                Consumer<LocationProvider>(
-                  builder: (context, locationProvider, child) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // State Dropdown
-                        SingleSelectionDropdown<String>(
-                          title: AppStrings.selectYourState,
-                          selectedValue: locationProvider.selectedState,
-                          items: locationProvider.states,
-                          onSelectionChanged: (value) =>
-                              locationProvider.selectState(value),
-                          getId: (s) => s,
-                          getName: (s) => s,
-                        ),
+                Obx(() {
+                  final locationController = Get.find<LocationController>();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // State Dropdown
+                      SingleSelectionDropdown<StateModel>(
+                        title: AppStrings.selectYourState,
+                        selectedValue: locationController.selectedState,
+                        items: locationController.stateModels,
+                        isLoading: locationController.isStatesLoading,
+                        onSelectionChanged: (value) =>
+                            locationController.selectState(value),
+                        getId: (s) => s.id.toString(),
+                        getName: (s) => s.name,
+                      ),
 
-                        const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                        // City Dropdown
-                        SingleSelectionDropdown<String>(
-                          title: AppStrings.selectYourCity,
-                          selectedValue: locationProvider.selectedCity,
-                          items: locationProvider.cities,
-                          isActive: locationProvider.selectedState != null,
-                          onSelectionChanged: (value) =>
-                              locationProvider.selectCity(value),
-                          getId: (s) => s,
-                          getName: (s) => s,
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                      // District Dropdown
+                      SingleSelectionDropdown<DistrictModel>(
+                        title: AppStrings.selectYourCity, // Reusing city string for District
+                        selectedValue: locationController.selectedDistrict,
+                        items: locationController.districtModels,
+                        isActive: locationController.selectedState != null,
+                        isLoading: locationController.isDistrictsLoading,
+                        onSelectionChanged: (value) =>
+                            locationController.selectDistrict(value),
+                        getId: (s) => s.id.toString(),
+                        getName: (s) => s.name,
+                      ),
+                    ],
+                  );
+                }),
 
                 const SizedBox(height: 48),
 
                 // Continue button
-                Consumer<LocationProvider>(
-                  builder: (context, locationProvider, child) {
-                    return CustomButton(
-                      text: AppStrings.continueText,
-                      isLoading: locationProvider.isLoading,
-                      onPressed: () async {
-                        final success =
-                            await locationProvider.submitLocation();
-                        if (success && context.mounted) {
-                          Navigator.pushNamed(
-                              context, '/enter-details');
-                        } else if (!success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: AppText(
-                                title: 'Please select both state and city',
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              backgroundColor: AppColors.error,
-                            ),
-                          );
-                        }
-                      },
-                    );
-                  },
-                ),
+                Obx(() {
+                  final locationController = Get.find<LocationController>();
+                  return CustomButton(
+                    text: AppStrings.continueText,
+                    isLoading: locationController.isSubmitting,
+                    onPressed: () async {
+                      final success = await locationController.submitLocation();
+                      if (success) {
+                        Get.toNamed('/enter-details');
+                      } else {
+                        AppSnackbar.error('Please select both state and city');
+                      }
+                    },
+                  );
+                }),
 
                 const SizedBox(height: 32),
               ],
