@@ -18,18 +18,19 @@ class MyPetitionsScreen extends StatelessWidget {
     final ProfileController profileController = Get.find<ProfileController>();
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const AppText(
+        surfaceTintColor: Colors.transparent,
+        title: AppText(
           title: 'My Petitions',
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Get.back(),
         ),
       ),
@@ -39,7 +40,7 @@ class MyPetitionsScreen extends StatelessWidget {
         }
 
         if (profileController.userPetitions.isEmpty) {
-          return _buildEmptyState();
+          return _buildEmptyState(context);
         }
 
         return RefreshIndicator(
@@ -51,7 +52,7 @@ class MyPetitionsScreen extends StatelessWidget {
               final petition = profileController.userPetitions[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _buildPetitionCard(petition),
+                child: _buildPetitionCard(context, petition),
               );
             },
           ),
@@ -60,14 +61,14 @@ class MyPetitionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPetitionCard(PetitionModel petition) {
+  Widget _buildPetitionCard(BuildContext context, PetitionModel petition) {
     final imageUrl = '${AppUrls.s3BaseUrl}${petition.s3ImageUrl}';
 
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug),
+      onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -88,8 +89,11 @@ class MyPetitionsScreen extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(color: AppColors.grey100),
-                  errorWidget: (context, url, error) => Container(color: AppColors.grey200),
+                  placeholder: (context, url) => Container(color: Theme.of(context).dividerColor),
+                  errorWidget: (context, url, error) => Container(
+                    color: Theme.of(context).dividerColor,
+                    child: const Icon(Icons.image, color: AppColors.grey400),
+                  ),
                 ),
               ),
             ),
@@ -117,7 +121,7 @@ class MyPetitionsScreen extends StatelessWidget {
                       AppText(
                         title: AppDateFormatter.formatDateTime(petition.createdAt),
                         fontSize: 10,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ],
                   ),
@@ -126,7 +130,7 @@ class MyPetitionsScreen extends StatelessWidget {
                     title: petition.title,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     maxLines: 2,
                     textOverflow: TextOverflow.ellipsis,
                   ),
@@ -138,7 +142,7 @@ class MyPetitionsScreen extends StatelessWidget {
                       AppText(
                         title: '${petition.voteCount} votes',
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                       const Spacer(),
                       const AppText(
@@ -167,12 +171,12 @@ class MyPetitionsScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.description_outlined, size: 64, color: AppColors.grey300),
+          Icon(Icons.description_outlined, size: 64, color: AppColors.grey400),
           const SizedBox(height: 16),
           const AppText(
             title: 'No Petitions Found',
@@ -180,10 +184,10 @@ class MyPetitionsScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
           const SizedBox(height: 8),
-          const AppText(
+          AppText(
             title: 'You haven\'t created any petitions yet.',
             fontSize: 14,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ],
       ),
@@ -195,12 +199,15 @@ class MyPetitionsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: 3,
       itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: AppColors.grey200,
-        highlightColor: AppColors.grey100,
+        baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+        highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
         child: Container(
           height: 200,
           margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

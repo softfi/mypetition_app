@@ -6,6 +6,11 @@ import 'package:my_petition_app/core/models/insight_model.dart';
 import 'package:my_petition_app/core/models/petition_model.dart';
 import 'package:my_petition_app/core/models/category_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:my_petition_app/controllers/auth_controller.dart';
+import 'package:my_petition_app/core/utils/guest_dialog.dart';
+import 'package:my_petition_app/core/utils/toast_message.dart';
+import 'package:my_petition_app/controllers/home_controller.dart';
+import 'package:my_petition_app/core/models/feed_model.dart';
 
 class DiscoverController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -131,6 +136,14 @@ class DiscoverController extends GetxController {
           newsList.addAll(fetchedNews);
         }
 
+        // Check save status for each item if logged in
+        final authController = Get.find<AuthController>();
+        if (!authController.isGuest) {
+          for (var news in fetchedNews) {
+            getNewsSaveStatus(news.id);
+          }
+        }
+
         if (fetchedNews.length < newsLimit) {
           hasMoreNews.value = false;
         } else {
@@ -228,11 +241,28 @@ class DiscoverController extends GetxController {
       if (response != null && response.data != null &&
           response.data['success'] == true) {
         selectedNews.value = NewsModel.fromJson(response.data['data']);
+        getNewsSaveStatus(selectedNews.value!.id);
       }
     } catch (e) {
       debugPrint('Error fetching news detail: $e');
     } finally {
       isNewsDetailLoading.value = false;
+    }
+  }
+
+  Future<void> getNewsSaveStatus(int newsId) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) return;
+
+    try {
+      final response = await _apiService.get(AppUrls.newsSaveStatus(newsId));
+
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool isSaved = response.data['isSaved'] ?? false;
+        _updateNewsState(newsId, isSaved);
+      }
+    } catch (e) {
+      debugPrint('Error getting news save status: $e');
     }
   }
 
@@ -303,6 +333,71 @@ class DiscoverController extends GetxController {
       return false;
     } finally {
       isVoting.value = false;
+    }
+  }
+  final RxBool isSavingNews = false.obs;
+
+  Future<void> toggleSaveNews(NewsModel news) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) {
+      GuestDialog.showLoginPrompt();
+      return;
+    }
+
+    // Optimistic Update: Toggle immediately for instant UI feedback
+    final bool originalSavedState = news.isSaved;
+    _updateNewsState(news.id, !originalSavedState);
+
+    try {
+      isSavingNews.value = true;
+      final response = await _apiService.post(AppUrls.saveNews(news.id));
+
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool serverSavedState = response.data['isSaved'] ?? !originalSavedState;
+        
+        // Sync with server state just in case it's different from our toggle
+        if (serverSavedState != !originalSavedState) {
+          _updateNewsState(news.id, serverSavedState);
+        }
+        
+        CommonToast.showToastSuccess(response.data['message'] ?? 'Action successful');
+      } else {
+        // Rollback on failure
+        _updateNewsState(news.id, originalSavedState);
+        CommonToast.showToastError(response?.data['message'] ?? 'Failed to update bookmark');
+      }
+    } catch (e) {
+      debugPrint('Error toggling save news: $e');
+      // Rollback on error
+      _updateNewsState(news.id, originalSavedState);
+    } finally {
+      isSavingNews.value = false;
+    }
+  }
+
+  void _updateNewsState(int newsId, bool isSaved) {
+    // Update newsList
+    final index = newsList.indexWhere((e) => e.id == newsId);
+    if (index != -1) {
+      newsList[index] = newsList[index].copyWith(isSaved: isSaved);
+    }
+
+    // Update selectedNews if it's the one being toggled
+    if (selectedNews.value?.id == newsId) {
+      selectedNews.value = selectedNews.value!.copyWith(isSaved: isSaved);
+    }
+
+    // Also update HomeController if it has this news
+    if (Get.isRegistered<HomeController>()) {
+      final homeController = Get.find<HomeController>();
+      final homeIndex = homeController.feedList.indexWhere((e) => e.feedType == 'news' && e.data.id == newsId);
+      if (homeIndex != -1) {
+        final currentItem = homeController.feedList[homeIndex];
+        homeController.feedList[homeIndex] = FeedItem(
+          feedType: 'news',
+          data: (currentItem.data as NewsModel).copyWith(isSaved: isSaved),
+        );
+      }
     }
   }
 }

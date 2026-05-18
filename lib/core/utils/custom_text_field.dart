@@ -91,7 +91,7 @@ class CustomTextField extends StatelessWidget {
                 AppText(
                   title: label!,
                   fontSize: 12,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w600,
                 ),
                 if (mandatory ?? false)
                   const AppText(
@@ -119,14 +119,16 @@ class CustomTextField extends StatelessWidget {
                   LengthLimitingTextInputFormatter(10)
                 ]
               : null,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
             counterText: "",
-            hintStyle: AppTextStyles.bodyMedium,
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
             prefixIcon: effectivePrefixWidget != null
                 ? Padding(
                     padding: const EdgeInsets.only(left: 14, right: 8),
@@ -138,23 +140,30 @@ class CustomTextField extends StatelessWidget {
                     ),
                   )
                 : null,
-            suffixIcon: suffixIcon,
+            suffixIcon: suffixIcon != null 
+              ? IconTheme(
+                  data: IconThemeData(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                  child: suffixIcon!,
+                )
+
+
+              : null,
             filled: true,
             fillColor: (isReadOnly ?? false)
-                ? const Color(0xFFEEEEEE)
-                : Colors.white,
+                ? (Theme.of(context).brightness == Brightness.light ? const Color(0xFFEEEEEE) : Colors.white10)
+                : Theme.of(context).cardColor,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor, width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.blue, width: 1),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

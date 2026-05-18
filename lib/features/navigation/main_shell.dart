@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/core/constants/app_strings.dart';
 import '../discover/discover_screen.dart';
@@ -6,6 +7,8 @@ import '../home/home_screen.dart';
 import '../home/petition_detail_screen.dart';
 import '../profile/profile_screen.dart';
 import 'package:my_petition_app/core/utils/custom_text.dart';
+import 'package:get/get.dart';
+import 'package:my_petition_app/controllers/home_controller.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -50,7 +53,7 @@ class _MainShellState extends State<MainShell>
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.depth != 0) return false;
+    if (notification.depth != 0 || _currentIndex == 2) return false;
     if (notification is ScrollUpdateNotification) {
       final delta = notification.scrollDelta ?? 0;
       // Scroll DOWN → hide
@@ -73,6 +76,14 @@ class _MainShellState extends State<MainShell>
 
   void _switchTab(int index) {
     setState(() => _currentIndex = index);
+    
+    // Call Feed API if Home tab (index 2) is clicked
+    if (index == 2) {
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().fetchFeed();
+      }
+    }
+
     if (_isNavHidden) {
       _isNavHidden = false;
       _navController.reverse();
@@ -83,24 +94,32 @@ class _MainShellState extends State<MainShell>
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    // Total nav bar visual height (item row + safe area bottom)
-    const double navRowHeight = 88.0;
-    final double navTotalHeight = navRowHeight + bottomPadding;
+    const double navHeight = 58.0; // Slimmer height
+    final double navTotalHeight = navHeight + bottomPadding;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
-      // No bottomNavigationBar — avoids the blank-space-reservation issue
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: NotificationListener<ScrollNotification>(
         onNotification: _handleScrollNotification,
         child: Stack(
           children: [
-            // Main content — full screen, content goes behind nav overlay
-            IndexedStack(
-              index: _currentIndex,
-              children: _screens,
+            AnimatedBuilder(
+              animation: _navOffset,
+              builder: (context, child) {
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: navTotalHeight * (1 - _navOffset.value),
+                  child: child!,
+                );
+              },
+              child: IndexedStack(
+                index: _currentIndex,
+                children: _screens,
+              ),
             ),
 
-            // Bottom nav bar as overlay — slides out without leaving white space
             Positioned(
               left: 0,
               right: 0,
@@ -113,44 +132,53 @@ class _MainShellState extends State<MainShell>
                     child: child,
                   );
                 },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, -3),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        height: navRowHeight,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        height: navHeight + bottomPadding,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.85 : 0.7),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                          border: Border(
+                            top: BorderSide(
+                              color: Colors.white.withOpacity(0.1),
+                              width: 0.5,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.08 : 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 0,
+                              offset: const Offset(0, -1),
+                            ),
+                          ],
+                        ),
+                        padding: EdgeInsets.only(bottom: bottomPadding),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildNavItem(Icons.explore_outlined, Icons.explore,
                                 AppStrings.discover, 0),
-                            _buildNavItem(Icons.article_outlined, Icons.article,
-                                AppStrings.news, 1),
                             _buildHomeNavItem(),
-                            _buildNavItem(Icons.description_outlined,
-                                Icons.description, AppStrings.petition, 3),
                             _buildNavItem(Icons.person_outline, Icons.person,
                                 AppStrings.profile, 4),
                           ],
                         ),
                       ),
-                      // Safe area bottom space (also slides out with nav)
-                      SizedBox(height: bottomPadding),
-                    ],
+                    ),
                   ),
-                ),
               ),
             ),
+
           ],
         ),
       ),
@@ -163,36 +191,17 @@ class _MainShellState extends State<MainShell>
     return GestureDetector(
       onTap: () => _switchTab(index),
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? AppColors.accent : AppColors.grey500,
-              size: 22,
-            ),
-            const SizedBox(height: 3),
-            AppText(
-              title: label,
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isActive ? AppColors.accent : AppColors.grey500,
-            ),
-            const SizedBox(height: 4),
-            // Orange indicator line below text
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 3,
-              width: isActive ? 70 : 0,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.accent.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Icon(
+          isActive ? activeIcon : icon,
+          color: isActive ? AppColors.accent : AppColors.grey500,
+          size: 24,
         ),
       ),
     );
@@ -203,36 +212,17 @@ class _MainShellState extends State<MainShell>
     return GestureDetector(
       onTap: () => _switchTab(2),
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isActive ? Icons.home : Icons.home_outlined,
-              color: isActive ? AppColors.accent : AppColors.grey500,
-              size: 28,
-            ),
-            const SizedBox(height: 3),
-            AppText(
-              title: AppStrings.home,
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isActive ? AppColors.accent : AppColors.grey500,
-            ),
-            const SizedBox(height: 4),
-            // Orange indicator line below text
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 3,
-              width: isActive ? 70 : 0,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.accent.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Icon(
+          isActive ? Icons.home : Icons.home_outlined,
+          color: isActive ? AppColors.accent : AppColors.grey500,
+          size: 26,
         ),
       ),
     );

@@ -33,12 +33,13 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Get.back(),
         ),
         title: const AppText(
@@ -89,7 +90,7 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                 ),
               ),
 
-              const Divider(height: 1, color: AppColors.grey200),
+              const Divider(height: 1),
 
               // Files/Images list
               if (insight.files.isEmpty)
@@ -127,16 +128,16 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                                       imageUrl: imageUrl,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Shimmer.fromColors(
-                                        baseColor: AppColors.grey200,
-                                        highlightColor: AppColors.grey100,
-                                        child: Container(height: 300, color: AppColors.white),
-                                      ),
-                                      errorWidget: (context, url, error) => Container(
-                                        height: 200,
-                                        color: AppColors.grey200,
-                                        child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
-                                      ),
+                                       placeholder: (context, url) => Shimmer.fromColors(
+                                         baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                                         highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                                         child: Container(height: 300, color: Theme.of(context).cardColor),
+                                       ),
+                                       errorWidget: (context, url, error) => Container(
+                                         height: 200,
+                                         color: Theme.of(context).dividerColor,
+                                         child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
+                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                   ],
@@ -158,9 +159,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AppColors.white.withOpacity(0.0),
-                              AppColors.white.withOpacity(0.8),
-                              AppColors.white,
+                              Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
+                              Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+                              Theme.of(context).scaffoldBackgroundColor,
                             ],
                           ),
                         ),
@@ -201,13 +202,13 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                             width: double.infinity,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Shimmer.fromColors(
-                              baseColor: AppColors.grey200,
-                              highlightColor: AppColors.grey100,
-                              child: Container(height: 300, color: AppColors.white),
+                              baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                              highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                              child: Container(height: 300, color: Theme.of(context).cardColor),
                             ),
                             errorWidget: (context, url, error) => Container(
                               height: 200,
-                              color: AppColors.grey200,
+                              color: Theme.of(context).dividerColor,
                               child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
                             ),
                           ),
@@ -237,30 +238,30 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey200,
-                  highlightColor: AppColors.grey100,
-                  child: Container(height: 24, width: double.infinity, color: AppColors.white),
+                  baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                  highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                  child: Container(height: 24, width: double.infinity, color: Theme.of(context).cardColor),
                 ),
                 const SizedBox(height: 8),
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey200,
-                  highlightColor: AppColors.grey100,
-                  child: Container(height: 24, width: 200, color: AppColors.white),
+                  baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                  highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                  child: Container(height: 24, width: 200, color: Theme.of(context).cardColor),
                 ),
                 const SizedBox(height: 16),
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey200,
-                  highlightColor: AppColors.grey100,
-                  child: Container(height: 16, width: 150, color: AppColors.white),
+                  baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                  highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                  child: Container(height: 16, width: 150, color: Theme.of(context).cardColor),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
           Shimmer.fromColors(
-            baseColor: AppColors.grey200,
-            highlightColor: AppColors.grey100,
-            child: Container(height: 400, width: double.infinity, color: AppColors.white),
+            baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+            highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+            child: Container(height: 400, width: double.infinity, color: Theme.of(context).cardColor),
           ),
         ],
       ),

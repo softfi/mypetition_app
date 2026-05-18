@@ -3,6 +3,9 @@
 
 class AppUrls {
   static const String baseUrl = 'https://api.mypetition.co/api/v1';
+  static const String webBaseUrl = 'https://mypetition.co';
+
+
   static const String states = '/public/states';
   static const String districts = '/public/districts';
   static const String signup = '/public/auth/signup';
@@ -20,6 +23,13 @@ class AppUrls {
   static const String s3BaseUrl = 'https://petition-prod.s3.ap-south-1.amazonaws.com';
   static const String saveFcmToken = '/public/user/fcms';
   static const String userPetitions = '/public/user/petitions';
+  static const String feed = '/public/feed';
+  static String saveNews(int id) => '/public/news/$id/save';
+  static String newsSaveStatus(int id) => '/public/news/$id/save-status';
+  static const String savedNews = '/public/user/news/saved';
 }
+
+
+
 
 

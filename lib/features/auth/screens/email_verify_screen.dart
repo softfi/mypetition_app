@@ -31,13 +31,13 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const AppText(title: 'Verify Email', fontSize: 18, fontWeight: FontWeight.w600),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Get.back(),
         ),
       ),
@@ -97,17 +97,21 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
                       length: 6,
                       animationType: AnimationType.fade,
                       keyboardType: TextInputType.number,
-                      textStyle: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600),
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 20, 
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       pinTheme: PinTheme(
                         shape: PinCodeFieldShape.box,
                         borderRadius: BorderRadius.circular(10),
                         fieldHeight: 45,
                         fieldWidth: 45,
-                        activeFillColor: AppColors.white,
-                        inactiveFillColor: AppColors.white,
-                        selectedFillColor: AppColors.white,
+                        activeFillColor: Theme.of(context).cardColor,
+                        inactiveFillColor: Theme.of(context).cardColor,
+                        selectedFillColor: Theme.of(context).cardColor,
                         activeColor: AppColors.primary,
-                        inactiveColor: AppColors.border,
+                        inactiveColor: Theme.of(context).dividerColor,
                         selectedColor: AppColors.primary,
                         borderWidth: 1.5,
                       ),

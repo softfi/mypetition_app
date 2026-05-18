@@ -23,7 +23,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -43,7 +43,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       return Container(
                         height: 220,
                         decoration: BoxDecoration(
-                          color: AppColors.grey100,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
@@ -96,18 +96,18 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     textStyle: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     pinTheme: PinTheme(
                       shape: PinCodeFieldShape.box,
                       borderRadius: BorderRadius.circular(12),
                       fieldHeight: 55,
                       fieldWidth: 55,
-                      activeFillColor: AppColors.white,
-                      inactiveFillColor: AppColors.white,
-                      selectedFillColor: AppColors.white,
+                      activeFillColor: Theme.of(context).cardColor,
+                      inactiveFillColor: Theme.of(context).cardColor,
+                      selectedFillColor: Theme.of(context).cardColor,
                       activeColor: AppColors.primary,
-                      inactiveColor: AppColors.border,
+                      inactiveColor: Theme.of(context).dividerColor,
                       selectedColor: AppColors.primary,
                       borderWidth: 1.5,
                     ),

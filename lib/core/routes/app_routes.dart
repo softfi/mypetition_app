@@ -10,6 +10,7 @@ import '../../features/discover/news_detail_screen.dart';
 import '../../features/discover/news_view_all_screen.dart';
 import '../../features/discover/insights_view_all_screen.dart';
 import '../../features/discover/insight_detail_screen.dart';
+import '../../features/discover/insight_reels_screen.dart';
 import '../../features/discover/petitions_view_all_screen.dart';
 import '../../features/discover/petition_detail_screen.dart';
 import '../../features/auth/screens/email_verify_screen.dart';
@@ -29,6 +30,7 @@ class AppRoutes {
   static const String newsViewAll = '/news-view-all';
   static const String insightsViewAll = '/insights-view-all';
   static const String insightDetail = '/insight-detail';
+  static const String insightReels = '/insight-reels';
   static const String petitionsViewAll = '/petitions-view-all';
   static const String petitionDetail = '/petition-detail';
 
@@ -58,6 +60,8 @@ class AppRoutes {
         return _buildRoute(const InsightsViewAllScreen(), settings);
       case insightDetail:
         return _buildRoute(const InsightDetailScreen(), settings);
+      case insightReels:
+        return _buildRoute(const InsightReelsScreen(), settings);
       case petitionsViewAll:
         return _buildRoute(const PetitionsViewAllScreen(), settings);
       case petitionDetail:

@@ -146,7 +146,7 @@ class _SingleSelectionDropdownState<T>
                 AppText(
                   title: widget.title!,
                   fontSize: 12,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w600,
                 ),
                 if (widget.mandatory ?? false)
                   const AppText(title: " *", color: Colors.red),
@@ -183,16 +183,16 @@ class _SingleSelectionDropdownState<T>
                         width: _link.leaderSize?.width,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           border: Border.all(
-                            color: AppColors.grey400,
+                            color: Theme.of(context).dividerColor,
                             width: 1,
                           ),
                           borderRadius: widget.borderRadiusGeometry ??
                               BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.4),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -206,12 +206,21 @@ class _SingleSelectionDropdownState<T>
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               autofocus: false,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                               decoration: InputDecoration(
                                 hintText:
                                     "Search ${widget.title ?? widget.selectType ?? ""}",
-                                prefixIcon: const Icon(Icons.search),
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                                prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                                filled: true,
+                                fillColor: Theme.of(context).scaffoldBackgroundColor,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
                                 ),
                                 contentPadding:
                                     const EdgeInsets.symmetric(horizontal: 10),
@@ -264,16 +273,16 @@ class _SingleSelectionDropdownState<T>
                                                         horizontal: 12),
                                                 decoration: BoxDecoration(
                                                   color: isSelected
-                                                      ? Colors.grey[200]
-                                                      : Colors.white,
+                                                      ? (Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : Colors.white10)
+                                                      : Colors.transparent,
                                                   borderRadius:
                                                       BorderRadius.circular(6),
                                                 ),
                                                 child: AppText(
                                                   title: widget.getName(item),
                                                   color: isSelected
-                                                      ? Colors.black
-                                                      : Colors.grey.shade800,
+                                                      ? Theme.of(context).colorScheme.primary
+                                                      : Theme.of(context).colorScheme.onSurface,
                                                 ),
                                               ),
                                             );
@@ -320,13 +329,13 @@ class _SingleSelectionDropdownState<T>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     border: Border.all(
                       color: showError
                           ? Colors.red
                           : (_isExpanded
-                              ? AppColors.grey400
-                              : Colors.grey.shade300),
+                              ? AppColors.primary
+                              : Theme.of(context).dividerColor),
                       width: showError ? 1.5 : (_isExpanded ? 1.5 : 1),
                     ),
                     borderRadius: widget.borderRadiusGeometry ??
@@ -339,8 +348,8 @@ class _SingleSelectionDropdownState<T>
                         child: AppText(
                           title: selectedText,
                           color: (_selectedItem == null)
-                              ? AppColors.grey400
-                              : Colors.black,
+                              ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       if (widget.isLoading)
@@ -357,7 +366,7 @@ class _SingleSelectionDropdownState<T>
                           _isExpanded
                               ? Icons.keyboard_arrow_up
                               : Icons.keyboard_arrow_down,
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                     ],
                   ),

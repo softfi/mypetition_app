@@ -117,6 +117,37 @@ class NotificationService extends GetxService {
       return;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     String? fcmToken = await getFcmToken();
     if (fcmToken == null) return;
 

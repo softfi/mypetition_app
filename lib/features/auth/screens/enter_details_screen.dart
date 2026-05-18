@@ -7,6 +7,8 @@ import 'package:my_petition_app/core/constants/app_strings.dart';
 import 'package:my_petition_app/core/utils/custom_text_field.dart';
 import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
+import 'package:my_petition_app/controllers/discover_controller.dart';
+import 'package:my_petition_app/core/models/category_model.dart';
 
 class EnterDetailsScreen extends StatefulWidget {
   const EnterDetailsScreen({super.key});
@@ -21,6 +23,16 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isTermsAccepted = false;
   final ProfileController _profileController = Get.find<ProfileController>();
+  final DiscoverController _discoverController = Get.find<DiscoverController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch categories if not already loaded
+    if (_discoverController.categoriesList.isEmpty) {
+      _discoverController.fetchCategories();
+    }
+  }
 
   @override
   void dispose() {
@@ -32,7 +44,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -74,7 +86,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                     title: AppStrings.enterYourName,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   const SizedBox(height: 8),
 
@@ -96,7 +108,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                     title: AppStrings.enterYourEmail,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   const SizedBox(height: 8),
 
@@ -106,6 +118,67 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // Interests Section
+                  AppText(
+                    title: "Your Interests",
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(height: 8),
+                  const AppText(
+                    title: "Select categories that interest you",
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(height: 12),
+                  Obx(() {
+                    if (_discoverController.isCategoriesLoading.value &&
+                        _discoverController.categoriesList.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _discoverController.categoriesList.map((category) {
+                        final isSelected = _profileController.selectedCategoryIds.contains(category.id);
+                        return GestureDetector(
+                          onTap: () => _profileController.toggleCategory(category.id),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary.withOpacity(0.15) : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : Theme.of(context).dividerColor,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AppText(
+                                  title: category.name,
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+                                ),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.check, size: 12, color: AppColors.primary),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  }),
 
                   const SizedBox(height: 24),
 
@@ -142,7 +215,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
 
                   // Continue button
                   Obx(() => CustomButton(
@@ -157,6 +230,7 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                         
                         final success = await _profileController.updateProfile(
                           name: _nameController.text.trim(),
+                          email: _emailController.text.trim(),
                         );
                         
                         if (success) {

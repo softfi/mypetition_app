@@ -7,6 +7,8 @@ import 'package:my_petition_app/controllers/location_controller.dart';
 import 'package:my_petition_app/controllers/splash_controller.dart';
 import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
+import 'package:my_petition_app/controllers/theme_controller.dart';
+import 'package:my_petition_app/controllers/home_controller.dart';
 
 import 'package:my_petition_app/core/service/notification/notification_service.dart';
 
@@ -22,6 +24,8 @@ class InitialBindings extends Bindings {
     Get.put<LocationController>(LocationController(), permanent: true);
     Get.put<ProfileController>(ProfileController(), permanent: true);
     Get.put<DiscoverController>(DiscoverController(), permanent: true);
+    Get.put<HomeController>(HomeController(), permanent: true);
+    Get.put<ThemeController>(ThemeController(), permanent: true);
     
     // Non-existent controllers (commented out for now)
     // Get.lazyPut(() => ProfileController());

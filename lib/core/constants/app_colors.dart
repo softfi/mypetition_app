@@ -4,20 +4,28 @@ class AppColors {
   AppColors._();
 
   // Primary
-  static const Color primary = Color(0xFF0290E8);
-  static const Color primaryLight = Color(0xFF4DD9D7);
-  static const Color primaryDark = Color(0xFF099E9C);
+  static const Color primary = Color(0xFFE7000A);
+  static const Color primaryLight = Color(0xFFFF4D4D);
+  static const Color primaryDark = Color(0xFFA30007);
 
-  static const Color green = Color(0xFF007C7C);
+  static const Color green = Color(0xFFE7000A); // Setting this to primary as well since user wanted global change
 
   // Accent
-  static const Color accent = Color(0xFFFF9800);
-  static const Color accentLight = Color(0xFFFFB74D);
+  static const Color accent = Color(0xFFE7000A);
+  static const Color accentLight = Color(0xFFFF4D4D);
 
   // Background
   static const Color background = Color(0xFFFFFFFF);
   static const Color scaffoldBackground = Color(0xFFF5F5F5);
   static const Color cardBackground = Color(0xFFFFFFFF);
+
+  // Dark Mode Colors
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color scaffoldBackgroundDark = Color(0xFF121212);
+  static const Color cardBackgroundDark = Color(0xFF1E1E1E);
+  static const Color textPrimaryDark = Color(0xFFF3F4F6);
+  static const Color textSecondaryDark = Color(0xFF9CA3AF);
+  static const Color borderDark = Color(0xFF2C2C2C);
 
   // Text
   static const Color textPrimary = Color(0xFF1A1A2E);
@@ -28,7 +36,7 @@ class AppColors {
   // Border
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderLight = Color(0xFFF3F4F6);
-  static const Color borderFocused = Color(0xFF0CB8B6);
+  static const Color borderFocused = Color(0xFFE7000A);
 
   // Status
   static const Color success = Color(0xFF22C55E);
@@ -51,6 +59,12 @@ class AppColors {
   // Gradient
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, primaryLight],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static const LinearGradient primaryDarkGradient = LinearGradient(
+    colors: [primaryDark, primary],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );

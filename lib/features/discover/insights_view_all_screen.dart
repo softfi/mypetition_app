@@ -16,17 +16,18 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const AppText(
           title: 'Insights',
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Get.back(),
         ),
       ),
@@ -58,19 +59,19 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
               }
 
               return InkWell(
-                onTap: () => Get.toNamed(AppRoutes.insightDetail, arguments: insight.slug),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                onTap: () => Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug}),
+                 child: Container(
+                   decoration: BoxDecoration(
+                     color: Theme.of(context).cardColor,
+                   borderRadius: BorderRadius.circular(16),
+                   boxShadow: [
+                     BoxShadow(
+                       color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.05 : 0.4),
+                       blurRadius: 10,
+                       offset: const Offset(0, 2),
+                     ),
+                   ],
+                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -82,15 +83,18 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
                                 imageUrl: imageUrl,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => Shimmer.fromColors(
-                                  baseColor: AppColors.grey200,
-                                  highlightColor: AppColors.grey100,
-                                  child: Container(color: AppColors.white),
-                                ),
-                                errorWidget: (context, url, error) => const Icon(Icons.error),
+                                 placeholder: (context, url) => Shimmer.fromColors(
+                                   baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                                   highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                                   child: Container(color: Theme.of(context).cardColor),
+                                 ),
+                                 errorWidget: (context, url, error) => Container(
+                                   color: Theme.of(context).dividerColor,
+                                   child: const Icon(Icons.error),
+                                 ),
                               )
                             : Container(
-                                color: AppColors.grey200,
+                                color: Theme.of(context).dividerColor,
                                 child: const Icon(Icons.image, color: AppColors.grey400),
                               ),
                       ),
@@ -143,11 +147,11 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
       ),
       itemCount: 6,
       itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: AppColors.grey200,
-        highlightColor: AppColors.grey100,
+        baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+        highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
           ),
         ),

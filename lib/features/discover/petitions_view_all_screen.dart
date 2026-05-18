@@ -46,17 +46,18 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const AppText(
           title: 'All Petitions',
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Get.back(),
         ),
       ),
@@ -75,7 +76,7 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
             controller: _scrollController,
             padding: const EdgeInsets.symmetric(vertical: 0),
             itemCount: controller.petitionsList.length + (controller.hasMorePetitions.value ? 1 : 0),
-            separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.grey200),
+            separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
               if (index == controller.petitionsList.length) {
                 return _buildMoreLoadingIndicator();
@@ -87,7 +88,7 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
               return InkWell(
                 onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug),
                 child: Container(
-                  color: AppColors.white,
+                  color: Theme.of(context).cardColor,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -97,12 +98,12 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
                         width: double.infinity,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: AppColors.grey200,
-                          highlightColor: AppColors.grey100,
-                          child: Container(color: AppColors.white),
+                          baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                          highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                          child: Container(color: Theme.of(context).cardColor),
                         ),
                         errorWidget: (context, url, error) => Container(
-                          color: AppColors.grey200,
+                          color: Theme.of(context).dividerColor,
                           child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
                         ),
                       ),
@@ -170,8 +171,8 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
                                       type: CustomButtonType.outlined,
                                       height: 36,
                                       borderRadius: 18,
-                                      borderColor: AppColors.grey300,
-                                      textColor: AppColors.textPrimary,
+                                      borderColor: Theme.of(context).dividerColor,
+                                      textColor: Theme.of(context).colorScheme.onSurface,
                                       fontSize: 12,
                                       onPressed: () {
                                         if (authController.isGuest) {
@@ -226,12 +227,12 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Shimmer.fromColors(
-          baseColor: AppColors.grey200,
-          highlightColor: AppColors.grey100,
+          baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+          highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
           child: Container(
             height: 250,
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
           ),

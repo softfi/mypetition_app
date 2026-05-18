@@ -11,6 +11,7 @@ import 'package:my_petition_app/core/utils/custom_text.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
 import 'package:my_petition_app/core/utils/date_formatter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:my_petition_app/core/models/news_model.dart';
 import 'package:my_petition_app/core/models/insight_model.dart';
 import 'package:my_petition_app/core/models/petition_model.dart';
 import 'package:my_petition_app/core/models/category_model.dart';
@@ -19,6 +20,9 @@ import 'package:my_petition_app/core/config/app_urls.dart';
 import 'package:my_petition_app/controllers/auth_controller.dart';
 import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/core/utils/guest_dialog.dart';
+import 'package:my_petition_app/core/utils/animated_border_button.dart';
+import 'package:my_petition_app/core/utils/app_shimmer.dart';
+import 'package:shimmer/shimmer.dart';
 
 class DiscoverScreen extends GetView<DiscoverController> {
   const DiscoverScreen({super.key});
@@ -26,7 +30,6 @@ class DiscoverScreen extends GetView<DiscoverController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -48,19 +51,19 @@ class DiscoverScreen extends GetView<DiscoverController> {
                         title: AppStrings.create,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       AppText(
                         title: AppStrings.discover,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       AppText(
                         title: 'My Feed >',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ],
                   ),
@@ -73,9 +76,9 @@ class DiscoverScreen extends GetView<DiscoverController> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: AppColors.grey200),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: Row(
                       children: [
@@ -100,10 +103,10 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildCategoryTab(Icons.dynamic_feed_outlined, AppStrings.myFeed, true),
-                      _buildCategoryTab(Icons.add_box_outlined, AppStrings.petitions, false),
-                      _buildCategoryTab(Icons.auto_stories_outlined, AppStrings.story, false),
-                      _buildCategoryTab(Icons.trending_up, AppStrings.trending, false),
+                      _buildCategoryTab(context, Icons.dynamic_feed_outlined, AppStrings.myFeed, true),
+                      _buildCategoryTab(context, Icons.add_box_outlined, AppStrings.petitions, false),
+                      _buildCategoryTab(context, Icons.auto_stories_outlined, AppStrings.story, false),
+                      _buildCategoryTab(context, Icons.trending_up, AppStrings.trending, false),
                     ],
                   ),
                 ),
@@ -120,7 +123,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                         title: AppStrings.petitions,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       GestureDetector(
                         onTap: () => Get.toNamed(AppRoutes.petitionsViewAll),
@@ -141,12 +144,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 Obx(() {
                   if (controller.isPetitionsLoading.value && controller.petitionsList.isEmpty) {
                     return Shimmer.fromColors(
-                      baseColor: AppColors.grey200,
-                      highlightColor: AppColors.grey100,
+                    baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                    highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
                       child: Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
@@ -160,14 +163,14 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   final petition = controller.petitionsList.first;
                   return GestureDetector(
                     onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug),
-                    child: _buildPetitionCard(petition),
+                    child: _buildPetitionCard(context, petition),
                   );
                 }),
 
                 const SizedBox(height: 32),
 
                 // Insights section header
-                _buildSectionHeader(AppStrings.insights, () {
+                _buildSectionHeader(context, AppStrings.insights, () {
                   Get.toNamed(AppRoutes.insightsViewAll);
                 }),
 
@@ -178,7 +181,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   height: 160,
                   child: Obx(() {
                     if (controller.isInsightsLoading.value && controller.insightsList.isEmpty) {
-                      return _buildInsightShimmer();
+                      return _buildInsightShimmer(context);
                     }
                     if (controller.insightsList.isEmpty) {
                       return Center(
@@ -199,8 +202,8 @@ class DiscoverScreen extends GetView<DiscoverController> {
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: GestureDetector(
-                            onTap: () => Get.toNamed(AppRoutes.insightDetail, arguments: insight.slug),
-                            child: _buildInsightImage(imageUrl, insight.title, insight.createdAt),
+                            onTap: () => Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug}),
+                            child: _buildInsightImage(context, imageUrl, insight.title, insight.createdAt),
                           ),
                         );
                       },
@@ -211,7 +214,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 const SizedBox(height: 32),
 
                 // Latest News section header
-                _buildSectionHeader(AppStrings.latestNews, () {
+                _buildSectionHeader(context, AppStrings.latestNews, () {
                   Get.toNamed(AppRoutes.newsViewAll);
                 }),
 
@@ -255,7 +258,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                                 title: isAll ? 'All' : category!.name,
                                 fontSize: 13,
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                                color: isSelected ? AppColors.accent : AppColors.textHint,
+                                color: isSelected ? AppColors.accent : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ),
@@ -270,7 +273,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 // News list items
                 Obx(() {
                   if (controller.isNewsLoading.value && controller.newsList.isEmpty) {
-                    return _buildNewsShimmer();
+                    return _buildNewsShimmer(context);
                   }
                   if (controller.newsList.isEmpty) {
                     return Padding(
@@ -284,13 +287,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
                     children: controller.newsList.asMap().entries.take(5).map((entry) {
                       final index = entry.key;
                       final news = entry.value;
-                      final imageUrl = '${AppUrls.s3BaseUrl}${news.s3ImageUrl}';
-                      return _buildNewsListItem(news.title, imageUrl, news.slug, news.createdAt, index);
+                      return _buildNewsListItem(context, news, index);
                     }).toList(),
                   );
                 }),
 
-                const SizedBox(height: 100),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -299,7 +301,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildSectionHeader(String title, VoidCallback onViewAll) {
+  Widget _buildSectionHeader(BuildContext context, String title, VoidCallback onViewAll) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -312,13 +314,13 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 title: title,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(height: 4),
               Container(
                 width: 32,
                 height: 2,
-                color: AppColors.textPrimary, // Underline effect
+                color: Theme.of(context).colorScheme.onSurface, // Underline effect
               ),
             ],
           ),
@@ -336,17 +338,17 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildCategoryTab(IconData icon, String label, bool isActive) {
+  Widget _buildCategoryTab(BuildContext context, IconData icon, String label, bool isActive) {
     return Column(
       children: [
         Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.accent.withValues(alpha: 0.1) : AppColors.white,
+            color: isActive ? AppColors.accent.withOpacity(0.1) : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive ? AppColors.accent : AppColors.grey200,
+              color: isActive ? AppColors.accent : Theme.of(context).dividerColor,
             ),
           ),
           child: Icon(
@@ -366,13 +368,13 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildPetitionCard(PetitionModel petition) {
+  Widget _buildPetitionCard(BuildContext context, PetitionModel petition) {
     final imageUrl = '${AppUrls.s3BaseUrl}${petition.s3ImageUrl}';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -395,12 +397,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: AppColors.grey200,
-                  highlightColor: AppColors.grey100,
-                  child: Container(color: AppColors.white),
+                  baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                  highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                  child: Container(color: Theme.of(context).cardColor),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: AppColors.grey200,
+                  color: Theme.of(context).dividerColor,
                   child: const Icon(Icons.image, size: 40, color: AppColors.grey400),
                 ),
               ),
@@ -416,7 +418,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   title: petition.title,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.4,
                   maxLines: 2,
                   textOverflow: TextOverflow.ellipsis,
@@ -447,13 +449,11 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   return Row(
                     children: [
                       Expanded(
-                        child: CustomButton(
+                        child: AnimatedBorderButton(
                           text: AppStrings.signPetition,
-                          height: 36,
-                          borderRadius: 18,
-                          backgroundColor: AppColors.accent,
-                          fontSize: 12,
-                          isFullWidth: true,
+                          height: 48,
+                          borderRadius: 14,
+                          fontSize: 15,
                           onPressed: () {
                             if (authController.isGuest) {
                               GuestDialog.showLoginPrompt();
@@ -468,11 +468,11 @@ class DiscoverScreen extends GetView<DiscoverController> {
                         child: CustomButton(
                           text: AppStrings.objectPetition,
                           type: CustomButtonType.outlined,
-                          height: 36,
-                          borderRadius: 18,
-                          borderColor: AppColors.grey300,
-                          textColor: AppColors.textPrimary,
-                          fontSize: 12,
+                          height: 48,
+                          borderRadius: 14,
+                          borderColor: Theme.of(context).dividerColor,
+                          textColor: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 15,
                           isFullWidth: true,
                           onPressed: () {
                             if (authController.isGuest) {
@@ -510,11 +510,11 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildInsightImage(String? imageUrl, String title, DateTime date) {
+  Widget _buildInsightImage(BuildContext context, String? imageUrl, String title, DateTime date) {
     return Container(
       width: 110,
       decoration: BoxDecoration(
-        color: AppColors.grey200,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ClipRRect(
@@ -527,9 +527,9 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: AppColors.grey200,
-                  highlightColor: AppColors.grey100,
-                  child: Container(color: AppColors.white),
+                  baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                  highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                  child: Container(color: Theme.of(context).cardColor),
                 ),
                 errorWidget: (context, url, error) => const Icon(Icons.error),
               )
@@ -567,10 +567,13 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildNewsListItem(String title, String imageUrl, String slug, DateTime date, int index) {
+
+
+  Widget _buildNewsListItem(BuildContext context, NewsModel news, int index) {
+    final imageUrl = '${AppUrls.s3BaseUrl}${news.s3ImageUrl}';
     return InkWell(
       onTap: () {
-        Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': slug});
+        Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': news.slug});
       },
 
 
@@ -589,8 +592,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppText.title(
-                        title: title,
-                        // fontSize: 12,
+                        title: news.title,
                         maxLines: 2,
                         textOverflow: TextOverflow.ellipsis,
                       ),
@@ -598,13 +600,23 @@ class DiscoverScreen extends GetView<DiscoverController> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.access_time, size: 10, color: AppColors.black),
+                          const Icon(Icons.access_time, size: 10),
                           const SizedBox(width: 4),
                           AppText(
-                            title: AppDateFormatter.formatDateTime(date),
+                            title: AppDateFormatter.formatDateTime(news.createdAt),
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textHint,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                          const Spacer(),
+                          // Bookmark Button
+                          GestureDetector(
+                            onTap: () => controller.toggleSaveNews(news),
+                            child: Icon(
+                              news.isSaved ? Icons.bookmark : Icons.bookmark_border,
+                              color: news.isSaved ? AppColors.accent : AppColors.grey500,
+                              size: 16,
+                            ),
                           ),
                         ],
                       ),
@@ -623,12 +635,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: AppColors.grey200,
-                        highlightColor: AppColors.grey100,
-                        child: Container(color: AppColors.white),
+                        baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                        highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                        child: Container(color: Theme.of(context).cardColor),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: AppColors.grey200,
+                        color: Theme.of(context).dividerColor,
                         child: const Icon(Icons.image, size: 24, color: AppColors.grey400),
                       ),
                     ),
@@ -637,28 +649,27 @@ class DiscoverScreen extends GetView<DiscoverController> {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(color: AppColors.grey200, height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(color: Theme.of(context).dividerColor, height: 1),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInsightShimmer() {
+  Widget _buildInsightShimmer(BuildContext context) {
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: 5,
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: AppColors.grey200,
-        highlightColor: AppColors.grey100,
+      itemBuilder: (context, index) => AppShimmer.fromColors(
+        context: context,
         child: Container(
           width: 110,
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
           ),
         ),
@@ -666,7 +677,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildNewsShimmer() {
+  Widget _buildNewsShimmer(BuildContext context) {
     return Column(
       children: List.generate(3, (index) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -676,25 +687,22 @@ class DiscoverScreen extends GetView<DiscoverController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Shimmer.fromColors(
-                    baseColor: AppColors.grey200,
-                    highlightColor: AppColors.grey100,
-                    child: Container(height: 12, color: AppColors.white),
+                  AppShimmer.fromColors(
+                    context: context,
+                    child: Container(height: 12, color: Theme.of(context).cardColor),
                   ),
                   const SizedBox(height: 8),
-                  Shimmer.fromColors(
-                    baseColor: AppColors.grey200,
-                    highlightColor: AppColors.grey100,
-                    child: Container(height: 12, width: 150, color: AppColors.white),
+                  AppShimmer.fromColors(
+                    context: context,
+                    child: Container(height: 12, width: 150, color: Theme.of(context).cardColor),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
-            Shimmer.fromColors(
-              baseColor: AppColors.grey200,
-              highlightColor: AppColors.grey100,
-              child: Container(width: 64, height: 64, decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(8))),
+            AppShimmer.fromColors(
+              context: context,
+              child: Container(width: 64, height: 64, decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8))),
             ),
           ],
         ),

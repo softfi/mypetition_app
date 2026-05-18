@@ -112,13 +112,18 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storageService.getAuthToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
+          // Check if headers should be sent (default to true)
+          final bool useHeaders = options.extra['useHeaders'] ?? true;
 
-          options.headers['device_id'] = _storageService.getDeviceId();
-          options.headers['device_type'] = _storageService.getDeviceType();
+          if (useHeaders) {
+            final token = await _storageService.getAuthToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+
+            options.headers['device_id'] = _storageService.getDeviceId();
+            options.headers['device_type'] = _storageService.getDeviceType();
+          }
 
           ApiResponsePrinter.printRequest(options);
           handler.next(options);
@@ -179,9 +184,19 @@ class ApiService {
   Future<Response?> get(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Options? options,
+    bool useHeaders = true,
   }) async {
     try {
-      final response = await _dio.get(path, queryParameters: queryParameters);
+      final requestOptions = options ?? Options();
+      requestOptions.extra ??= {};
+      requestOptions.extra!['useHeaders'] = useHeaders;
+
+      final response = await _dio.get(
+        path, 
+        queryParameters: queryParameters,
+        options: requestOptions,
+      );
 
       return response;
     } on DioException catch (e) {

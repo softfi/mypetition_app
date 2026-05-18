@@ -23,6 +23,7 @@ class PetitionModel {
   final int yesCount;
   final int noCount;
   final int voteCount;
+  final int views;
 
   PetitionModel({
     required this.id,
@@ -49,12 +50,13 @@ class PetitionModel {
     required this.yesCount,
     required this.noCount,
     required this.voteCount,
+    this.views = 0,
   });
 
   factory PetitionModel.fromJson(Map<String, dynamic> json) {
     return PetitionModel(
-      id: json['id'],
-      categoryId: json['category_id'],
+      id: json['id'] ?? 0,
+      categoryId: json['category_id'] ?? 0,
       stateId: json['state_id'],
       districtId: json['district_id'],
       title: json['title'] ?? '',
@@ -64,12 +66,12 @@ class PetitionModel {
       s3ImageUrl: json['s3_image_url'] ?? '',
       imageLinkUrl: json['image_link_url'],
       userType: json['user_type'] ?? '',
-      userId: json['user_id'],
+      userId: json['user_id'] ?? 0,
       status: json['status'] ?? '',
       comment: json['comment'],
       isActive: json['is_active'] ?? true,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
       deletedAt: json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
       category: json['category'] != null ? PetitionCategory.fromJson(json['category']) : null,
       state: json['state'] != null ? PetitionLocation.fromJson(json['state']) : null,
@@ -77,8 +79,10 @@ class PetitionModel {
       yesCount: json['yesCount'] ?? 0,
       noCount: json['noCount'] ?? 0,
       voteCount: json['voteCount'] ?? 0,
+      views: json['views'] ?? 0,
     );
   }
+
 }
 
 class PetitionCategory {

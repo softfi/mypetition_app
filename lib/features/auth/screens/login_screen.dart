@@ -17,7 +17,7 @@ class LoginScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -31,8 +31,8 @@ class LoginScreen extends StatelessWidget {
 
                 const SizedBox(height: 28),
 
-                // Image Grid
-                _buildImageGrid(size),
+                // Image grid header
+                _buildImageGrid(context, size),
 
                 const SizedBox(height: 32),
 
@@ -98,9 +98,10 @@ class LoginScreen extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textHint,
-                    decoration: TextDecoration.underline,
+                    // decoration: TextDecoration.underline,
                   ),
                 ),
+
 
                 const SizedBox(height: 32),
               ],
@@ -118,7 +119,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGrid(Size size) {
+  Widget _buildImageGrid(BuildContext context, Size size) {
     final gridSize = size.width - 48; // padding
 
     return SizedBox(
@@ -132,12 +133,12 @@ class LoginScreen extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 6,
-                  child: _buildGridImage(AppAssets.loginGrid1),
+                  child: _buildGridImage(context, AppAssets.loginGrid1),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   flex: 4,
-                  child: _buildGridImage(AppAssets.loginGrid2),
+                  child: _buildGridImage(context, AppAssets.loginGrid2),
                 ),
               ],
             ),
@@ -149,12 +150,12 @@ class LoginScreen extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 4,
-                  child: _buildGridImage(AppAssets.loginGrid3),
+                  child: _buildGridImage(context, AppAssets.loginGrid3),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   flex: 6,
-                  child: _buildGridImage(AppAssets.loginGrid4),
+                  child: _buildGridImage(context, AppAssets.loginGrid4),
                 ),
               ],
             ),
@@ -164,13 +165,13 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGridImage(String assetPath) {
+  Widget _buildGridImage(BuildContext context, String assetPath) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AppColors.grey100,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Image.asset(
@@ -178,7 +179,7 @@ class LoginScreen extends StatelessWidget {
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              color: AppColors.grey200,
+              color: Theme.of(context).dividerColor,
               child: const Icon(
                 Icons.image_outlined,
                 size: 40,

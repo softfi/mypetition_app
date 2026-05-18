@@ -32,7 +32,7 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -72,7 +72,7 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
                         return Container(
                           height: 240,
                           decoration: BoxDecoration(
-                            color: AppColors.grey100,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
@@ -119,7 +119,7 @@ class _OtpNumberInputScreenState extends State<OtpNumberInputScreen> {
                       title: AppStrings.mobileNumber,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 

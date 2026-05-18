@@ -19,6 +19,7 @@ class ProfileController extends GetxController {
   final _profileImage = Rxn<File>();
   final _isProfileLoading = false.obs;
   final _isSubmitting = false.obs;
+  final _selectedCategoryIds = <int>[].obs;
 
   // User Petitions
   final _userPetitions = <PetitionModel>[].obs;
@@ -31,6 +32,7 @@ class ProfileController extends GetxController {
   File? get profileImage => _profileImage.value;
   bool get isProfileLoading => _isProfileLoading.value;
   bool get isSubmitting => _isSubmitting.value;
+  List<int> get selectedCategoryIds => _selectedCategoryIds;
 
   List<PetitionModel> get userPetitions => _userPetitions;
   bool get isLoadingUserPetitions => _isLoadingUserPetitions.value;
@@ -58,6 +60,19 @@ class ProfileController extends GetxController {
         
         _currentUser.value = user;
         await _storageService.saveUserData(user.toJson());
+
+        // Initialize selected category IDs
+        if (data['category_ids'] != null) {
+          final List ids = data['category_ids'];
+          _selectedCategoryIds.assignAll(
+            ids.map((e) => int.tryParse(e.toString()) ?? 0).where((id) => id != 0).toList(),
+          );
+        } else if (data['interestCategories'] != null) {
+          final List categories = data['interestCategories'];
+          _selectedCategoryIds.assignAll(
+            categories.map((e) => int.tryParse(e['id'].toString()) ?? 0).where((id) => id != 0).toList(),
+          );
+        }
       }
     } catch (e) {
       Get.log("Error fetching profile: $e");
@@ -83,7 +98,16 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Update Profile API
+  // Toggle category selection
+  void toggleCategory(int categoryId) {
+    if (_selectedCategoryIds.contains(categoryId)) {
+      _selectedCategoryIds.remove(categoryId);
+    } else {
+      _selectedCategoryIds.add(categoryId);
+    }
+  }
+
+  // Clear image
   Future<bool> updateProfile({
     required String name,
     String? email,
@@ -95,15 +119,27 @@ class ProfileController extends GetxController {
 
     _isSubmitting.value = true;
     try {
+      final Map<String, dynamic> data = {
+        "category_ids": _selectedCategoryIds.toList(),
+        "name": name,
+        "email": email,
+      };
+
+      // Only send state and district if they are valid IDs (> 0)
+      final int? sId = stateId ?? user.stateId;
+      final int? dId = districtId ?? user.cityId;
+
+      if (sId != null && sId > 0) {
+        data["state_id"] = sId.toString();
+      }
+      
+      if (dId != null && dId > 0) {
+        data["district_id"] = dId.toString();
+      }
+
       final response = await _apiService.put(
         AppUrls.updateProfile,
-        data: {
-          "category_ids": [],
-          "district_id": (districtId ?? user.cityId)?.toString() ?? "",
-          "name": name,
-          "email": email,
-          "state_id": (stateId ?? user.stateId)?.toString() ?? "",
-        },
+        data: data,
       );
 
       if (response != null && response.data['success'] == true) {

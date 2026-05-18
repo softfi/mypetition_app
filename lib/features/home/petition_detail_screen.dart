@@ -27,7 +27,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +76,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                     title: AppStrings.petitionTitle,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.3,
                   ),
 
@@ -94,7 +94,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                               title: AppStrings.petitionTo,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                               height: 1.4,
                             ),
                             const SizedBox(height: 4),
@@ -193,7 +193,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                 title: '1,638 Comments',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               AnimatedRotation(
                 turns: _isCommentsExpanded ? 0.5 : 0.0,
@@ -261,7 +261,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           title: '2025 Report\'s - 800+ Suicides of Farmers.',
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         const SizedBox(height: 8),
         AppText(
@@ -276,7 +276,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           title: 'Policy Need to Implement-',
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         const SizedBox(height: 8),
         AppText(
@@ -304,7 +304,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
               title: 'Share :',
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             const SizedBox(width: 10),
             _buildSocialIcon(Icons.facebook, const Color(0xFF1877F2)),
@@ -362,7 +362,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           title: 'Are You Willing To Sign Petition?',
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         const SizedBox(height: 16),
         Row(
@@ -385,8 +385,8 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                 type: CustomButtonType.outlined,
                 height: 40,
                 borderRadius: 20,
-                borderColor: AppColors.grey300,
-                textColor: AppColors.textPrimary,
+                borderColor: Theme.of(context).dividerColor,
+                textColor: Theme.of(context).colorScheme.onSurface,
                 fontSize: 13,
                 isFullWidth: true,
                 onPressed: () {},
@@ -407,7 +407,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           title: 'Write Your Feedback?',
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         const SizedBox(height: 14),
         CustomTextField(
@@ -457,7 +457,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                 title: value,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             AppText(
               title: label,
@@ -500,7 +500,7 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                       title: name,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     const SizedBox(width: 8),
                     AppText(

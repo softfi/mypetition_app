@@ -9,6 +9,8 @@ import 'package:my_petition_app/core/utils/custom_text.dart';
 import 'package:my_petition_app/core/utils/custom_text_field.dart';
 import 'package:my_petition_app/core/utils/custom_dropdown.dart';
 import 'package:my_petition_app/features/location/models/location_models.dart';
+import 'package:my_petition_app/controllers/discover_controller.dart';
+import 'package:my_petition_app/core/models/category_model.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,6 +22,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late ProfileController _profileController;
   late LocationController _locationController;
+  late DiscoverController _discoverController;
   
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -30,6 +33,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _profileController = Get.find<ProfileController>();
     _locationController = Get.find<LocationController>();
+    _discoverController = Get.find<DiscoverController>();
     
     final user = _profileController.currentUser;
     _nameController = TextEditingController(text: user?.name ?? '');
@@ -38,6 +42,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     
     // Pre-select location if available
     _initializeLocation();
+
+    // Fetch categories if not already loaded
+    if (_discoverController.categoriesList.isEmpty) {
+      _discoverController.fetchCategories();
+    }
   }
 
   Future<void> _initializeLocation() async {
@@ -77,21 +86,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const AppText(
+        title: AppText(
           title: 'Edit Profile',
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       body: SingleChildScrollView(
@@ -128,7 +138,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 title: _getInitials(),
                                 fontSize: 32,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.white,
+                                color: Colors.white,
                               ),
                             )
                           : null,
@@ -144,7 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       child: const Icon(
                         Icons.camera_alt,
-                        color: AppColors.white,
+                        color: Colors.white,
                         size: 16,
                       ),
                     ),
@@ -207,6 +217,78 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             )),
             
+            const SizedBox(height: 30),
+
+            // Interests Section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 18, color: AppColors.accent),
+                    SizedBox(width: 8),
+                    AppText(
+                      title: 'Your Interests',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const AppText(
+                  title: 'Select categories that interest you to personalize your experience.',
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 20),
+                Obx(() {
+                  if (_discoverController.isCategoriesLoading.value &&
+                      _discoverController.categoriesList.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _discoverController.categoriesList.map((category) {
+                      final isSelected = _profileController.selectedCategoryIds.contains(category.id);
+                      return GestureDetector(
+                        onTap: () => _profileController.toggleCategory(category.id),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary.withOpacity(0.15) : Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : Theme.of(context).dividerColor,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AppText(
+                                title: category.name,
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.check, size: 12, color: AppColors.primary),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                }),
+              ],
+            ),
+
             const SizedBox(height: 50),
 
             // Save Button

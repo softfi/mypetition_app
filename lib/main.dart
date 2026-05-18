@@ -10,6 +10,7 @@ import 'core/service/storage/storage_service.dart';
 import 'core/service/api/api_services.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/service/notification/notification_service.dart';
+import 'package:my_petition_app/controllers/theme_controller.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -51,10 +52,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure ThemeController is initialized before accessing it
+    final themeController = Get.put(ThemeController());
+    
     return GetMaterialApp(
       title: 'My Petition',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeController.theme, 
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       initialBinding: InitialBindings(),
