@@ -225,8 +225,8 @@ class NewsFeedItem extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AppText(
                     title: news.title,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
                     color: Colors.black,
                     height: 1.25,
                     maxLines: 3,
@@ -237,21 +237,40 @@ class NewsFeedItem extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AppText(
                     title: news.description,
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: Colors.grey[700],
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 8),
+
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: AppText(
-                    title:
-                        '${AppDateFormatter.formatDateTime(news.createdAt)} • MyPetition News',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey[500],
+                  child: Row(
+                    children: [
+                      AppText(
+                        title:
+                            '${AppDateFormatter.formatDateTime(news.createdAt)}',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[600],
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.remove_red_eye_outlined,
+                        size: 12,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(
+                        title: '${news.views}',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -500,17 +519,17 @@ class PetitionFeedItem extends StatelessWidget {
                 children: [
                   AppText(
                     title: petition.title,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
                     color: Colors.black,
                     height: 1.3,
                   ),
                   const SizedBox(height: 12),
                   AppText(
                     title: petition.description,
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Colors.grey[800],
+                    color: Colors.grey[700],
                     height: 1.6,
                     maxLines: 8,
                     textOverflow: TextOverflow.ellipsis,
@@ -518,6 +537,7 @@ class PetitionFeedItem extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // Sign Progress
+                  // Sign Progress & Views
                   Row(
                     children: [
                       const Icon(
@@ -528,10 +548,23 @@ class PetitionFeedItem extends StatelessWidget {
                       const SizedBox(width: 8),
                       AppText(
                         title:
-                            '${petition.voteCount} people signed this petition',
+                            '${petition.voteCount} people signed',
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.accent,
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.remove_red_eye_outlined,
+                        size: 15,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 6),
+                      AppText(
+                        title: '${petition.views} views',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
                       ),
                     ],
                   ),

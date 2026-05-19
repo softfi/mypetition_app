@@ -15,7 +15,7 @@ import 'package:my_petition_app/controllers/theme_controller.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("Handling a background message: ${message.messageId}");
+  printNotificationPayload('BACKGROUND_RECEIVE', message);
 }
 
 void main() async {

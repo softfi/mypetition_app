@@ -19,7 +19,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
+  int _currentIndex = 2; // Always default to Home Feed (index 2) when app opens
   bool _isNavHidden = false;
 
   late final AnimationController _navController;
@@ -44,6 +44,13 @@ class _MainShellState extends State<MainShell>
       parent: _navController,
       curve: Curves.easeInOut,
     );
+
+    // Call Feed API immediately since Home Feed is the default starting tab
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().fetchFeed();
+      }
+    });
   }
 
   @override
@@ -220,7 +227,7 @@ class _MainShellState extends State<MainShell>
           borderRadius: BorderRadius.circular(25),
         ),
         child: Icon(
-          isActive ? Icons.home : Icons.home_outlined,
+          isActive ? Icons.feed : Icons.feed_outlined,
           color: isActive ? AppColors.accent : AppColors.grey500,
           size: 26,
         ),

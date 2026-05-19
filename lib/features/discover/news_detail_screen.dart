@@ -34,21 +34,27 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     super.initState();
     // Support both old slug-only and new index+slug arguments
     final args = Get.arguments;
+    String? targetSlug;
+
     if (args is Map) {
-      _currentIndex = args['index'] ?? 0;
-    } else {
-      // Fallback for direct slug navigation
-      _currentIndex = controller.newsList.indexWhere((e) => e.slug == args);
+      targetSlug = args['slug'];
+      _currentIndex = args['index'] ?? controller.newsList.indexWhere((e) => e.slug == targetSlug);
       if (_currentIndex == -1) _currentIndex = 0;
+    } else if (args is String) {
+      targetSlug = args;
+      _currentIndex = controller.newsList.indexWhere((e) => e.slug == targetSlug || e.id.toString() == targetSlug);
+      if (_currentIndex == -1) _currentIndex = 0;
+    } else {
+      _currentIndex = 0;
     }
 
     _pageController = PageController(initialPage: _currentIndex);
     
     // Initial fetch
-    if (controller.newsList.isNotEmpty) {
+    if (targetSlug != null) {
+      controller.fetchNewsDetail(targetSlug);
+    } else if (controller.newsList.isNotEmpty) {
       controller.fetchNewsDetail(controller.newsList[_currentIndex].slug);
-    } else if (args is String) {
-      controller.fetchNewsDetail(args);
     }
   }
 
@@ -59,6 +65,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   }
 
   void _onPageChanged(int index) {
+    if (controller.newsList.isEmpty) return;
     setState(() {
       _currentIndex = index;
     });
@@ -119,29 +126,32 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
       ),
       floatingActionButton: const FontSizeControls(),
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        itemCount: controller.newsList.length,
-        itemBuilder: (context, index) {
-          return Obx(() {
-            // Only show content if this is the active page and not loading
-            // We use a unique check for slug to match current fetched detail
-            final news = controller.selectedNews.value;
-            final isCurrentPageLoading = controller.isNewsDetailLoading.value;
-            
-            // If we are on this index, we show the fetched detail
-            if (index == _currentIndex) {
-              if (isCurrentPageLoading) return _buildLoadingShimmer();
-              if (news == null) return const Center(child: AppText(title: 'News not found'));
-              return _buildNewsContent(news);
-            }
-            
-            // Placeholder for other pages to allow smooth swiping
-            return _buildLoadingShimmer();
-          });
-        },
-      ),
+      body: Obx(() {
+        final totalCount = controller.newsList.isEmpty ? 1 : controller.newsList.length;
+        return PageView.builder(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          itemCount: totalCount,
+          itemBuilder: (context, index) {
+            return Obx(() {
+              // Only show content if this is the active page and not loading
+              // We use a unique check for slug to match current fetched detail
+              final news = controller.selectedNews.value;
+              final isCurrentPageLoading = controller.isNewsDetailLoading.value;
+              
+              // If we are on this index, we show the fetched detail
+              if (index == _currentIndex) {
+                if (isCurrentPageLoading) return _buildLoadingShimmer();
+                if (news == null) return const Center(child: AppText(title: 'News not found'));
+                return _buildNewsContent(news);
+              }
+              
+              // Placeholder for other pages to allow smooth swiping
+              return _buildLoadingShimmer();
+            });
+          },
+        );
+      }),
     );
   }
 

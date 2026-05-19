@@ -94,4 +94,9 @@ class AppStrings {
   static const String petitionTo =
       "To -Hon'ble Chief Minister of Maharashtra Leader of Opposition & Media";
   static const String petitionDate = '3 April 2026';
+
+  // WebView Links
+  static const String termsUrl = 'https://mypetition.co/p/terms-conditions';
+  static const String privacyUrl = 'https://mypetition.co/p/privacy-policy';
 }
+

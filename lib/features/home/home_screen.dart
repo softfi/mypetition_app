@@ -248,36 +248,68 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
+
   Widget _buildFeedShimmer(BuildContext context) {
-    return AppShimmer.fromColors(
-      context: context,
-      child: Column(
-        children: [
-          Expanded(
-            flex: 42,
-            child: Container(color: Colors.white),
-          ),
-          Expanded(
-            flex: 58,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(height: 20, width: 100, color: Colors.white),
-                  const SizedBox(height: 16),
-                  Container(height: 30, width: double.infinity, color: Colors.white),
-                  const SizedBox(height: 12),
-                  Container(height: 20, width: double.infinity, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Container(height: 20, width: double.infinity, color: Colors.white),
-                  const Spacer(),
-                  Container(height: 50, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
-                ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBgColor = isDark ? Theme.of(context).cardColor : Colors.white;
+    
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: AppShimmer.fromColors(
+        context: context,
+        child: Column(
+          children: [
+            Expanded(
+              flex: 42,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              flex: 58,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 20, width: 100, color: cardBgColor),
+                    const SizedBox(height: 16),
+                    Container(height: 30, width: double.infinity, color: cardBgColor),
+                    const SizedBox(height: 12),
+                    Container(height: 20, width: double.infinity, color: cardBgColor),
+                    const SizedBox(height: 8),
+                    Container(height: 20, width: double.infinity, color: cardBgColor),
+                    const Spacer(),
+                    Container(
+                      height: 50,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

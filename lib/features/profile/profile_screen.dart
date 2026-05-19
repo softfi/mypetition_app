@@ -14,6 +14,7 @@ import 'edit_profile_screen.dart';
 import 'my_petitions_screen.dart';
 import 'saved_news_screen.dart';
 import 'package:my_petition_app/controllers/theme_controller.dart';
+import 'package:my_petition_app/core/utils/webview_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -158,12 +159,18 @@ class ProfileScreen extends StatelessWidget {
                     _buildOptionItem(
                       icon: Icons.gavel_outlined,
                       title: 'Terms & Conditions',
-                      onTap: () {},
+                      onTap: () => Get.to(() => const WebViewScreen(
+                            url: AppStrings.termsUrl,
+                            title: 'Terms & Conditions',
+                          )),
                     ),
                     _buildOptionItem(
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacy Policy',
-                      onTap: () {},
+                      onTap: () => Get.to(() => const WebViewScreen(
+                            url: AppStrings.privacyUrl,
+                            title: 'Privacy Policy',
+                          )),
                     ),
                     _buildOptionItem(
                       icon: Icons.info_outline_rounded,
