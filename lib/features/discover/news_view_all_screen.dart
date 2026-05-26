@@ -6,8 +6,8 @@ import 'package:my_petition_app/core/utils/custom_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
-import 'package:my_petition_app/core/utils/date_formatter.dart';
 import 'package:my_petition_app/core/config/app_urls.dart';
+import 'package:my_petition_app/core/utils/share_helper.dart';
 
 class NewsViewAllScreen extends StatefulWidget {
   const NewsViewAllScreen({super.key});
@@ -127,6 +127,7 @@ class _NewsViewAllScreenState extends State<NewsViewAllScreen> {
     return RefreshIndicator(
       onRefresh: () => controller.fetchNews(),
       child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
         controller: _scrollController,
         padding: const EdgeInsets.only(top: 12, bottom: 100),
         itemCount: controller.newsList.length + (controller.hasMoreNews.value ? 1 : 0),
@@ -178,6 +179,7 @@ class _NewsViewAllScreenState extends State<NewsViewAllScreen> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
+                            /*
                             const Icon(Icons.access_time, size: 12, color: AppColors.textHint),
                             const SizedBox(width: 4),
                             AppText(
@@ -186,12 +188,29 @@ class _NewsViewAllScreenState extends State<NewsViewAllScreen> {
                               color: AppColors.textHint,
                             ),
                             const Spacer(),
+                            */
                             // Bookmark Button
                             GestureDetector(
                               onTap: () => controller.toggleSaveNews(news),
                               child: Icon(
                                 news.isSaved ? Icons.bookmark : Icons.bookmark_border,
                                 color: news.isSaved ? AppColors.accent : AppColors.grey500,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Share Button
+                            GestureDetector(
+                              onTap: () {
+                                ShareHelper.shareNews(
+                                  title: news.title,
+                                  url: '${AppUrls.webBaseUrl}/news/${news.slug}',
+                                  description: news.description,
+                                );
+                              },
+                              child: const Icon(
+                                Icons.share_outlined,
+                                color: AppColors.grey500,
                                 size: 16,
                               ),
                             ),

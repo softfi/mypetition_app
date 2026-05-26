@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/controllers/location_controller.dart';
+import 'package:my_petition_app/core/config/app_urls.dart';
 import 'dart:io';
 import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/core/utils/custom_button.dart';
@@ -23,8 +24,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late ProfileController _profileController;
   late LocationController _locationController;
   late DiscoverController _discoverController;
-  
-  late TextEditingController _nameController;
+  late TextEditingController _firstNameController;
+  late TextEditingController _middleNameController;
+  late TextEditingController _lastNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
 
@@ -36,7 +38,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _discoverController = Get.find<DiscoverController>();
     
     final user = _profileController.currentUser;
-    _nameController = TextEditingController(text: user?.name ?? '');
+    String first = user?.firstName ?? '';
+    String middle = user?.middleName ?? '';
+    String last = user?.lastName ?? '';
+
+    if (first.isEmpty && (user?.name ?? '').isNotEmpty) {
+      List<String> nameParts = user!.name!.split(' ').where((e) => e.isNotEmpty).toList();
+      if (nameParts.isNotEmpty) {
+        first = nameParts[0];
+        if (nameParts.length > 2) {
+          last = nameParts.last;
+          middle = nameParts.sublist(1, nameParts.length - 1).join(' ');
+        } else if (nameParts.length == 2) {
+          last = nameParts[1];
+        }
+      }
+    }
+
+    _firstNameController = TextEditingController(text: first);
+    _middleNameController = TextEditingController(text: middle);
+    _lastNameController = TextEditingController(text: last);
     _emailController = TextEditingController(text: user?.email ?? '');
     _phoneController = TextEditingController(text: user?.mobile ?? '');
     
@@ -77,7 +98,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -113,6 +136,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             
             // Profile image with edit icon
             Obx(() {
+              final user = _profileController.currentUser;
+              final hasNetworkImage = user?.profileImage != null && user!.profileImage!.isNotEmpty;
               return Stack(
                 alignment: Alignment.bottomRight,
                 children: [
@@ -130,9 +155,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 image: FileImage(_profileController.profileImage!),
                                 fit: BoxFit.cover,
                               )
-                            : null,
+                            : hasNetworkImage
+                                ? DecorationImage(
+                                    image: NetworkImage('${AppUrls.s3BaseUrl}${user!.profileImage}'),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                       ),
-                      child: _profileController.profileImage == null
+                      child: _profileController.profileImage == null && !hasNetworkImage
                           ? Center(
                               child: AppText(
                                 title: _getInitials(),
@@ -167,18 +197,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             // Form Fields
             CustomTextField(
-              label: 'Full Name',
-              hint: 'Enter your full name',
-              controller: _nameController,
+              label: 'First Name',
+              hint: 'Enter your first name',
+              controller: _firstNameController,
             ),
             const SizedBox(height: 20),
             CustomTextField(
-              label: 'Email Address',
-              hint: 'Enter your email address',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
+              label: 'Middle Name',
+              hint: 'Enter your middle name (Optional)',
+              controller: _middleNameController,
             ),
             const SizedBox(height: 20),
+            CustomTextField(
+              label: 'Last Name',
+              hint: 'Enter your last name (Optional)',
+              controller: _lastNameController,
+            ),
+            const SizedBox(height: 20),
+            // CustomTextField(
+            //   label: 'Email Address',
+            //   hint: 'Enter your email address',
+            //   controller: _emailController,
+            //   keyboardType: TextInputType.emailAddress,
+            // ),
+            // const SizedBox(height: 20),
             CustomTextField(
               label: 'Phone Number',
               hint: 'Enter your phone number',
@@ -300,7 +342,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               isLoading: _profileController.isSubmitting,
               onPressed: () async {
                 final success = await _profileController.updateProfile(
-                  name: _nameController.text.trim(),
+                  firstName: _firstNameController.text.trim(),
+                  middleName: _middleNameController.text.trim(),
+                  lastName: _lastNameController.text.trim(),
                   email: _emailController.text.trim(),
                   stateId: _locationController.selectedState?.id,
                   districtId: _locationController.selectedDistrict?.id,
@@ -319,7 +363,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _getInitials() {
     final user = _profileController.currentUser;
-    if (user == null || user.name == null || user.name!.isEmpty) return 'U';
+    if (user == null) return 'U';
+    if (user.firstName != null && user.firstName!.isNotEmpty) {
+      if (user.lastName != null && user.lastName!.isNotEmpty) {
+        return '${user.firstName![0]}${user.lastName![0]}'.toUpperCase();
+      }
+      return user.firstName![0].toUpperCase();
+    }
+    if (user.name == null || user.name!.isEmpty) return 'U';
     
     List<String> names = user.name!.split(" ");
     if (names.length > 1) {

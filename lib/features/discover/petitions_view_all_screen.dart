@@ -13,6 +13,7 @@ import 'package:my_petition_app/core/constants/app_strings.dart';
 import 'package:my_petition_app/controllers/auth_controller.dart';
 import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/core/utils/guest_dialog.dart';
+import 'package:my_petition_app/core/utils/animated_sign_button.dart';
 
 class PetitionsViewAllScreen extends StatefulWidget {
   const PetitionsViewAllScreen({super.key});
@@ -73,6 +74,7 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
         return RefreshIndicator(
           onRefresh: () => controller.fetchPetitions(),
           child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
             controller: _scrollController,
             padding: const EdgeInsets.symmetric(vertical: 0),
             itemCount: controller.petitionsList.length + (controller.hasMorePetitions.value ? 1 : 0),
@@ -146,57 +148,33 @@ class _PetitionsViewAllScreenState extends State<PetitionsViewAllScreen> {
                                 return const SizedBox.shrink();
                               }
 
-                              return Row(
-                                children: [
-                                  Expanded(
-                                    child: CustomButton(
-                                      text: AppStrings.signPetition,
-                                      height: 36,
-                                      borderRadius: 18,
-                                      backgroundColor: AppColors.accent,
-                                      fontSize: 12,
-                                      onPressed: () {
-                                        if (authController.isGuest) {
-                                          GuestDialog.showLoginPrompt();
-                                        } else {
-                                          Get.toNamed(AppRoutes.emailVerify);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: CustomButton(
-                                      text: AppStrings.objectPetition,
-                                      type: CustomButtonType.outlined,
-                                      height: 36,
-                                      borderRadius: 18,
-                                      borderColor: Theme.of(context).dividerColor,
-                                      textColor: Theme.of(context).colorScheme.onSurface,
-                                      fontSize: 12,
-                                      onPressed: () {
-                                        if (authController.isGuest) {
-                                          GuestDialog.showLoginPrompt();
-                                        } else {
-                                          Get.toNamed(AppRoutes.emailVerify);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
+                              return AnimatedSignButton(
+                                text: 'Sign a Petition',
+                                onPressed: () {
+                                  if (authController.isGuest) {
+                                    GuestDialog.showLoginPrompt();
+                                  } else {
+                                    Get.toNamed(AppRoutes.emailVerify);
+                                  }
+                                },
                               );
                             }),
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Icon(Icons.how_to_vote, size: 14, color: AppColors.textHint),
-                                const SizedBox(width: 6),
-                                AppText(
-                                  title: '${petition.voteCount} total votes',
-                                  fontSize: 11,
-                                  color: AppColors.textHint,
-                                ),
-                                const Spacer(),
+                                if (petition.voteCount >= 50000) ...[
+                                  const Icon(Icons.how_to_vote, size: 14, color: AppColors.textHint),
+                                  const SizedBox(width: 6),
+                                  AppText(
+                                    title: '${petition.voteCount} total votes',
+                                    fontSize: 11,
+                                    color: AppColors.textHint,
+                                  ),
+                                  const Spacer(),
+                                ] else ...[
+                                  const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textHint),
+                                  const SizedBox(width: 6),
+                                ],
                                 AppText(
                                   title: AppDateFormatter.formatDateTime(petition.createdAt),
                                   fontSize: 11,

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
-import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/core/utils/custom_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:my_petition_app/core/utils/date_formatter.dart';
 import 'package:my_petition_app/core/config/app_urls.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:my_petition_app/core/utils/share_helper.dart';
+import 'package:my_petition_app/core/models/insight_model.dart';
+import 'package:my_petition_app/core/service/api/api_services.dart';
+import 'package:my_petition_app/controllers/saved_insights_controller.dart';
 
 class InsightReelsScreen extends StatefulWidget {
   const InsightReelsScreen({super.key});
@@ -16,16 +18,43 @@ class InsightReelsScreen extends StatefulWidget {
 }
 
 class _InsightReelsScreenState extends State<InsightReelsScreen> {
-  final controller = Get.find<DiscoverController>();
+  late DiscoverController discoverController;
+  late SavedInsightsController savedInsightsController;
   late PageController _pageController;
   late int initialIndex;
+  late String source;
+  double _currentPageValue = 0.0;
+  final Map<String, GlobalKey> _reelKeys = {};
+
+  List<InsightModel> get insightsList => source == 'saved' ? savedInsightsController.savedInsightsList : discoverController.insightsList;
+
+  GlobalKey _getReelKey(String slug) {
+    _reelKeys.putIfAbsent(slug, () => GlobalKey(debugLabel: slug));
+    return _reelKeys[slug]!;
+  }
 
   @override
   void initState() {
     super.initState();
-    final args = Get.arguments as Map<String, dynamic>;
-    initialIndex = args['index'] ?? 0;
-    _pageController = PageController(initialPage: initialIndex);
+    discoverController = Get.find<DiscoverController>();
+    if (Get.isRegistered<SavedInsightsController>()) {
+      savedInsightsController = Get.find<SavedInsightsController>();
+    } else {
+      savedInsightsController = Get.put(SavedInsightsController());
+    }
+
+    final args = Get.arguments as Map<String, dynamic>?;
+    initialIndex = args?['index'] ?? 0;
+    source = args?['source'] ?? 'discover';
+    _currentPageValue = initialIndex.toDouble();
+    _pageController = PageController(initialPage: initialIndex)
+      ..addListener(() {
+        if (mounted) {
+          setState(() {
+            _currentPageValue = _pageController.page ?? 0.0;
+          });
+        }
+      });
   }
 
   @override
@@ -34,78 +63,122 @@ class _InsightReelsScreenState extends State<InsightReelsScreen> {
     super.dispose();
   }
 
+  Widget _buildStackItem(int index, double percent) {
+    if (index >= insightsList.length) return const SizedBox.shrink();
+    final insight = insightsList[index];
+    final child = InsightReelItem(
+      key: _getReelKey(insight.slug),
+      insight: insight,
+      source: source,
+    );
+
+    // Next Card: Stationary BEHIND and Scales UP
+    double scale = (0.9 + (percent) * 0.1).clamp(0.9, 1.0);
+    double opacity = (percent).clamp(0.0, 1.0);
+
+    return Transform.scale(
+      scale: scale,
+      child: Opacity(
+        opacity: opacity,
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          PageView.builder(
-            scrollDirection: Axis.vertical,
-            controller: _pageController,
-            itemCount: controller.insightsList.length,
-            itemBuilder: (context, index) {
-              return InsightReelItem(insight: controller.insightsList[index]);
-            },
-          ),
-          // Back Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 10,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                onPressed: () => Get.back(),
-              ),
-            ),
-          ),
-          
-          // Header Text
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 15,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: AppText(
-                title: 'Insights',
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
+    // Calculate indices and animation progress
+    final int currentIndex = _currentPageValue.floor();
+    final int nextIndex = currentIndex + 1;
+    final double percent = _currentPageValue - currentIndex;
 
-          // Go to First (Top) Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 10,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.keyboard_double_arrow_up_rounded,
-                  color: Colors.white,
-                  size: 24,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.black, // Set explicitly to black
+        statusBarIconBrightness: Brightness.light, // White icons for battery, time, etc.
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          bottom: true,
+          child: Column(
+            children: [
+              // Custom App Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      behavior: HitTestBehavior.opaque,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+                          SizedBox(width: 4),
+                          AppText(
+                            title: 'Stories',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                tooltip: 'Go to first',
-                onPressed: () {
-                  _pageController.animateToPage(
-                    0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOut,
-                  );
-                },
               ),
-            ),
+
+
+
+              // The Reels Area
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      if (source == 'saved') {
+                        await savedInsightsController.fetchSavedInsights(isRefresh: true);
+                      } else {
+                        await discoverController.fetchInsights();
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        // 1. Next Card (Rendered first so it's BEHIND)
+                        if (nextIndex < insightsList.length)
+                          _buildStackItem(nextIndex, percent),
+
+                        // 2. PageView (Handles gestures, renders the current card, and handles horizontal scroll)
+                        PageView.builder(
+                          scrollDirection: Axis.vertical,
+                          controller: _pageController,
+                          physics: const PageScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                          itemCount: insightsList.length,
+                          itemBuilder: (context, index) {
+                            int renderIndex = _currentPageValue.floor();
+                            if (renderIndex < 0) renderIndex = 0;
+                            if (renderIndex >= insightsList.length) renderIndex = insightsList.length - 1;
+                            
+                            if (index == renderIndex) {
+                              final insight = insightsList[index];
+                              return InsightReelItem(
+                                key: _getReelKey(insight.slug),
+                                insight: insight,
+                                source: source,
+                              );
+                            }
+                            // Return transparent box for other indices so the underlying scaling card is visible
+                            return const SizedBox.expand();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -113,20 +186,75 @@ class _InsightReelsScreenState extends State<InsightReelsScreen> {
 
 class InsightReelItem extends StatefulWidget {
   final dynamic insight;
-  const InsightReelItem({super.key, required this.insight});
+  final String source;
+  const InsightReelItem({super.key, required this.insight, this.source = 'discover'});
 
   @override
   State<InsightReelItem> createState() => _InsightReelItemState();
 }
 
 class _InsightReelItemState extends State<InsightReelItem> {
+  final controller = Get.find<DiscoverController>();
   int _currentImageIndex = 0;
   late PageController _horizontalController;
+  List<dynamic> _loadedFiles = [];
 
   @override
   void initState() {
     super.initState();
     _horizontalController = PageController();
+    _loadedFiles = widget.insight.files;
+    _fetchFullDetails();
+  }
+
+  @override
+  void didUpdateWidget(InsightReelItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.insight.slug != oldWidget.insight.slug) {
+      _currentImageIndex = 0;
+      _loadedFiles = widget.insight.files;
+      _fetchFullDetails();
+    }
+  }
+
+  Future<void> _fetchFullDetails() async {
+    final slug = widget.insight.slug;
+    try {
+      final response = await ApiService().get('${AppUrls.insights}/$slug');
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final detailData = response.data['data'];
+        final List filesJson = detailData['files'] ?? [];
+        final parsedFiles = filesJson.map((i) => InsightFile.fromJson(i)).toList();
+        if (mounted) {
+          // Prevent unnecessary rebuilds (and blinking) if the files are the same length
+          if (_loadedFiles.length != parsedFiles.length) {
+            setState(() {
+              _loadedFiles = parsedFiles;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching full details for insight $slug: $e');
+    }
+  }
+
+  void _showNextImage() {
+    if (_currentImageIndex < _loadedFiles.length - 1) {
+      _horizontalController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _showPreviousImage() {
+    if (_currentImageIndex > 0) {
+      _horizontalController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -138,34 +266,47 @@ class _InsightReelItemState extends State<InsightReelItem> {
   @override
   Widget build(BuildContext context) {
     final insight = widget.insight;
-    final hasMultipleImages = insight.files.length > 1;
+    final hasMultipleImages = _loadedFiles.length > 1;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Horizontal PageView for Multiple Images
-        PageView.builder(
-          scrollDirection: Axis.horizontal,
-          controller: _horizontalController,
-          itemCount: insight.files.length,
-          onPageChanged: (index) {
-            setState(() => _currentImageIndex = index);
-          },
-          itemBuilder: (context, imgIndex) {
-            final imageUrl = '${AppUrls.s3BaseUrl}${insight.files[imgIndex].s3ImageUrl}';
-            return CachedNetworkImage(
-              imageUrl: imageUrl,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: Colors.black,
-                child: const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity == null) return;
+        if (details.primaryVelocity! < -100) {
+          // Swipe Left -> Next Image
+          _showNextImage();
+        } else if (details.primaryVelocity! > 100) {
+          // Swipe Right -> Previous Image
+          _showPreviousImage();
+        }
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Horizontal PageView for Multiple Images
+          PageView.builder(
+            scrollDirection: Axis.horizontal,
+            controller: _horizontalController,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _loadedFiles.length,
+            onPageChanged: (index) {
+              setState(() => _currentImageIndex = index);
+            },
+            itemBuilder: (context, imgIndex) {
+              final imageUrl = '${AppUrls.s3BaseUrl}${_loadedFiles[imgIndex].s3ImageUrl}';
+              return CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.fill,
+                placeholder: (context, url) => Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
                 ),
-              ),
-              errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white),
-            );
-          },
-        ),
+                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white),
+              );
+            },
+          ),
 
         // Gradient Overlay
         Container(
@@ -184,152 +325,170 @@ class _InsightReelItemState extends State<InsightReelItem> {
           ),
         ),
 
-        // Dot Indicator for Multiple Images
-        if (hasMultipleImages)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 60,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                insight.files.length,
-                (index) => Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _currentImageIndex == index
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.4),
+        // Logo and Dot Indicator Row
+        Positioned(
+          top: 60,
+          left: 16,
+          right: 16,
+          child: Row(
+            children: [
+              // Logo
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lightbulb, color: Colors.yellow, size: 20),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'insights',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              // Dot Indicator for Multiple Images
+              if (hasMultipleImages)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(
+                    _loadedFiles.length,
+                    (index) => Container(
+                      width: 10,
+                      height: 10,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentImageIndex == index
+                            ? Colors.yellow
+                            : Colors.white.withOpacity(0.4),
+                      ),
+                    ),
                   ),
                 ),
+            ],
+          ),
+        ),
+
+        // Bookmark Button (Bottom Center)
+        Positioned(
+          bottom: 30,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                final discoverController = Get.find<DiscoverController>();
+                SavedInsightsController? savedController;
+                if (widget.source == 'saved' && Get.isRegistered<SavedInsightsController>()) {
+                  savedController = Get.find<SavedInsightsController>();
+                }
+                
+                final List<InsightModel> list = widget.source == 'saved' && savedController != null 
+                    ? savedController.savedInsightsList 
+                    : discoverController.insightsList;
+
+                final currentInsight = list.firstWhere(
+                  (e) => e.id == widget.insight.id,
+                  orElse: () => widget.insight,
+                );
+                
+                // Toggle via DiscoverController to hit API
+                discoverController.toggleSaveInsight(currentInsight);
+                
+                // If we are in saved list, manually toggle local state for immediate feedback
+                if (widget.source == 'saved' && savedController != null) {
+                  final idx = savedController.savedInsightsList.indexWhere((e) => e.id == widget.insight.id);
+                  if (idx != -1) {
+                    savedController.savedInsightsList[idx] = 
+                        savedController.savedInsightsList[idx].copyWith(isSaved: !currentInsight.isSaved);
+                  }
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.transparent,
+                child: Obx(() {
+                  final discoverController = Get.find<DiscoverController>();
+                  SavedInsightsController? savedController;
+                  if (widget.source == 'saved' && Get.isRegistered<SavedInsightsController>()) {
+                    savedController = Get.find<SavedInsightsController>();
+                  }
+                  
+                  final List<InsightModel> list = widget.source == 'saved' && savedController != null 
+                      ? savedController.savedInsightsList 
+                      : discoverController.insightsList;
+
+                  final currentInsight = list.firstWhere(
+                    (e) => e.id == widget.insight.id,
+                    orElse: () => widget.insight,
+                  );
+                  final isSaved = currentInsight.isSaved;
+                  return Icon(
+                    isSaved ? Icons.bookmark : Icons.bookmark_border,
+                    color: Colors.white,
+                    size: 28,
+                  );
+                }),
               ),
             ),
           ),
+        ),
 
-        // Content Overlay
+        // Share Button (Bottom Right)
         Positioned(
-          left: 16,
-          right: 70,
-          bottom: 40,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Colors.yellow, Colors.orange, Colors.red, Colors.purple],
-                      ),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 20, color: Colors.grey),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const AppText(
-                    title: 'My Petition App',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const AppText(
-                      title: 'Follow',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              AppText(
+          bottom: 80,
+          right: 16,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              ShareHelper.shareNews(
                 title: insight.title,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+                url: '${AppUrls.webBaseUrl}/insight/${insight.slug}',
+                description: insight.title,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                maxLines: 2,
-                textOverflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.music_note, size: 14, color: Colors.white),
-                  const SizedBox(width: 6),
-                  const AppText(
-                    title: 'Original Audio • Insight News',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-
-        // Right Side Actions
-        Positioned(
-          right: 12,
-          bottom: 60,
-          child: Column(
-            children: [
-              _buildActionButton(Icons.favorite_border, '1.2K'),
-              const SizedBox(height: 20),
-              _buildActionButton(Icons.mode_comment_outlined, '456'),
-              const SizedBox(height: 20),
-              _buildActionButton(Icons.send_outlined, ''),
-              const SizedBox(height: 20),
-              const Icon(Icons.more_vert, color: Colors.white, size: 28),
-              const SizedBox(height: 20),
-              if (insight.files.isNotEmpty)
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white, width: 2),
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
-                      image: CachedNetworkImageProvider('${AppUrls.s3BaseUrl}${insight.files[0].s3ImageUrl}'),
-                      fit: BoxFit.cover,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.rotationY(3.14159),
+                    child: const Icon(Icons.reply, size: 18, color: Colors.black),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Share',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
                     ),
                   ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String label) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 32),
-        if (label.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          AppText(
-            title: label,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ],
-      ],
-    );
-  }
+    ),
+  );
+}
 }

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.softfix.mypetition",
+      "sha256_cert_fingerprints": [
+        "13:21:00:F2:B1:96:80:88:96:78:9F:78:C4:50:AC:F1:8E:98:EA:BD:96:C1:62:50:03:0F:88:AA:9A:D5:A2:D5"
+      ]
+    }
+  }
+]

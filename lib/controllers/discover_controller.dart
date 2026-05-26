@@ -11,6 +11,8 @@ import 'package:my_petition_app/core/utils/guest_dialog.dart';
 import 'package:my_petition_app/core/utils/toast_message.dart';
 import 'package:my_petition_app/controllers/home_controller.dart';
 import 'package:my_petition_app/core/models/feed_model.dart';
+import 'package:my_petition_app/core/models/news_comment_model.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
 class DiscoverController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -31,6 +33,68 @@ class DiscoverController extends GetxController {
   // Insights State
   final RxList<InsightModel> insightsList = <InsightModel>[].obs;
   final RxBool isInsightsLoading = false.obs;
+  final RxBool isSavingInsight = false.obs;
+
+  Future<void> toggleSaveInsight(InsightModel insight) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) {
+      GuestDialog.showLoginPrompt();
+      return;
+    }
+
+    final bool originalSavedState = insight.isSaved;
+    _updateInsightState(insight.id, !originalSavedState);
+
+    try {
+      isSavingInsight.value = true;
+      final response = await _apiService.post(AppUrls.saveInsight(insight.id));
+
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool serverSavedState = response.data['isSaved'] ?? !originalSavedState;
+        
+        if (serverSavedState != !originalSavedState) {
+          _updateInsightState(insight.id, serverSavedState);
+        }
+        
+        CommonToast.showToastSuccess(response.data['message'] ?? 'Action successful');
+      } else {
+        _updateInsightState(insight.id, originalSavedState);
+        CommonToast.showToastError(response?.data['message'] ?? 'Failed to update bookmark');
+      }
+    } catch (e) {
+      debugPrint('Error toggling save insight: $e');
+      _updateInsightState(insight.id, originalSavedState);
+    } finally {
+      isSavingInsight.value = false;
+    }
+  }
+
+  void _updateInsightState(int insightId, bool isSaved) {
+    final index = insightsList.indexWhere((e) => e.id == insightId);
+    if (index != -1) {
+      insightsList[index] = insightsList[index].copyWith(isSaved: isSaved);
+    }
+
+    if (selectedInsight.value?.id == insightId) {
+      selectedInsight.value = selectedInsight.value!.copyWith(isSaved: isSaved);
+    }
+  }
+
+  Future<void> getInsightSaveStatus(int insightId) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) return;
+
+    try {
+      final response = await _apiService.get(AppUrls.insightSaveStatus(insightId));
+
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool isSaved = response.data['isSaved'] ?? false;
+        _updateInsightState(insightId, isSaved);
+      }
+    } catch (e) {
+      debugPrint('Error getting insight save status: $e');
+    }
+  }
 
   // Petitions State
   final RxList<PetitionModel> petitionsList = <PetitionModel>[].obs;
@@ -43,6 +107,11 @@ class DiscoverController extends GetxController {
   // Detail State
   final Rx<NewsModel?> selectedNews = Rx<NewsModel?>(null);
   final RxBool isNewsDetailLoading = false.obs;
+
+  // News Comments State
+  final RxList<NewsCommentModel> newsCommentsList = <NewsCommentModel>[].obs;
+  final RxBool isNewsCommentsLoading = false.obs;
+  final RxBool isSubmittingComment = false.obs;
 
   final Rx<InsightModel?> selectedInsight = Rx<InsightModel?>(null);
   final RxBool isInsightDetailLoading = false.obs;
@@ -95,6 +164,7 @@ class DiscoverController extends GetxController {
   void setNewsCategory(int categoryId) {
     if (selectedNewsCategoryId.value == categoryId) return;
     selectedNewsCategoryId.value = categoryId;
+    newsList.clear(); // Clear list to show shimmer
     fetchNews(isRefresh: true);
   }
 
@@ -122,6 +192,10 @@ class DiscoverController extends GetxController {
       final response = await _apiService.get(
         AppUrls.news,
         queryParameters: queryParams,
+        useHeaders: !Get.find<AuthController>().isGuest,
+        options: isRefresh 
+          ? CacheOptions(store: MemCacheStore(), policy: CachePolicy.noCache).toOptions() 
+          : null,
       );
 
       if (response != null && response.data != null &&
@@ -179,6 +253,10 @@ class DiscoverController extends GetxController {
           'page': currentPetitionsPage.value,
           'limit': petitionsLimit,
         },
+        useHeaders: !Get.find<AuthController>().isGuest,
+        options: isRefresh 
+          ? CacheOptions(store: MemCacheStore(), policy: CachePolicy.noCache).toOptions() 
+          : null,
       );
 
       if (response != null && response.data != null &&
@@ -216,13 +294,24 @@ class DiscoverController extends GetxController {
   Future<void> fetchInsights() async {
     try {
       isInsightsLoading.value = true;
-      final response = await _apiService.get(AppUrls.insights);
+      final response = await _apiService.get(
+        AppUrls.insights,
+        useHeaders: !Get.find<AuthController>().isGuest,
+        options: CacheOptions(store: MemCacheStore(), policy: CachePolicy.noCache).toOptions(),
+      );
 
       if (response != null && response.data != null &&
           response.data['success'] == true) {
         final List data = response.data['data'];
-        insightsList.assignAll(
-            data.map((json) => InsightModel.fromJson(json)).toList());
+        final fetchedInsights = data.map((json) => InsightModel.fromJson(json)).toList();
+        insightsList.assignAll(fetchedInsights);
+
+        final authController = Get.find<AuthController>();
+        if (!authController.isGuest) {
+          for (var insight in fetchedInsights) {
+            getInsightSaveStatus(insight.id);
+          }
+        }
       }
     } catch (e) {
       debugPrint('Error fetching insights: $e');
@@ -242,6 +331,7 @@ class DiscoverController extends GetxController {
           response.data['success'] == true) {
         selectedNews.value = NewsModel.fromJson(response.data['data']);
         getNewsSaveStatus(selectedNews.value!.id);
+        fetchNewsComments(selectedNews.value!.id);
       }
     } catch (e) {
       debugPrint('Error fetching news detail: $e');
@@ -263,6 +353,64 @@ class DiscoverController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error getting news save status: $e');
+    }
+  }
+
+  Future<void> fetchNewsComments(int newsId) async {
+    try {
+      isNewsCommentsLoading.value = true;
+      newsCommentsList.clear();
+
+      final response = await _apiService.get(AppUrls.newsComments(newsId));
+
+      if (response != null && response.data != null &&
+          response.data['success'] == true) {
+        final List data = response.data['data'] ?? [];
+        newsCommentsList.assignAll(
+          data.map((json) => NewsCommentModel.fromJson(json)).toList()
+        );
+      }
+    } catch (e) {
+      debugPrint('Error fetching news comments: $e');
+    } finally {
+      isNewsCommentsLoading.value = false;
+    }
+  }
+
+  Future<bool> addNewsComment(int newsId, String commentText) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) {
+      GuestDialog.showLoginPrompt();
+      return false;
+    }
+
+    if (commentText.trim().isEmpty) return false;
+
+    try {
+      isSubmittingComment.value = true;
+      final response = await _apiService.post(
+        AppUrls.newsComments(newsId),
+        data: {
+          "comment": commentText.trim(),
+        },
+      );
+
+      if (response != null && response.data != null &&
+          response.data['success'] == true) {
+        final newComment = NewsCommentModel.fromJson(response.data['data']);
+        newsCommentsList.insert(0, newComment);
+        CommonToast.showToastSuccess(response.data['message'] ?? 'Comment added');
+        return true;
+      } else {
+        CommonToast.showToastError(response?.data['message'] ?? 'Failed to add comment');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error adding comment: $e');
+      CommonToast.showToastError('An error occurred');
+      return false;
+    } finally {
+      isSubmittingComment.value = false;
     }
   }
 
@@ -302,7 +450,8 @@ class DiscoverController extends GetxController {
     }
   }
 
-  final RxBool isVoting = false.obs;
+  // '' = idle, 'yes' = yes-button loading, 'no' = no-button loading
+  final RxString votingFor = ''.obs;
 
   Future<bool> castVote({
     required int petitionId,
@@ -310,7 +459,7 @@ class DiscoverController extends GetxController {
     String? comment,
   }) async {
     try {
-      isVoting.value = true;
+      votingFor.value = vote; // mark only this button as loading
       final response = await _apiService.post(
         AppUrls.votePetition(petitionId),
         data: {
@@ -332,9 +481,67 @@ class DiscoverController extends GetxController {
       debugPrint('Error casting vote: $e');
       return false;
     } finally {
-      isVoting.value = false;
+      votingFor.value = ''; // clear loading state
     }
   }
+  final RxBool isSavingPetition = false.obs;
+
+  Future<void> toggleSavePetition(PetitionModel petition) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) {
+      GuestDialog.showLoginPrompt();
+      return;
+    }
+
+    final bool originalSavedState = petition.isSaved;
+    _updatePetitionState(petition.id, !originalSavedState);
+
+    try {
+      isSavingPetition.value = true;
+      final response = await _apiService.post(AppUrls.savePetition(petition.id));
+
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool serverSavedState = response.data['isSaved'] ?? !originalSavedState;
+        if (serverSavedState != !originalSavedState) {
+          _updatePetitionState(petition.id, serverSavedState);
+        }
+        CommonToast.showToastSuccess(response.data['message'] ?? 'Action successful');
+      } else {
+        _updatePetitionState(petition.id, originalSavedState);
+        CommonToast.showToastError(response?.data['message'] ?? 'Failed to update bookmark');
+      }
+    } catch (e) {
+      debugPrint('Error toggling save petition: $e');
+      _updatePetitionState(petition.id, originalSavedState);
+    } finally {
+      isSavingPetition.value = false;
+    }
+  }
+
+  void _updatePetitionState(int petitionId, bool isSaved) {
+    final index = petitionsList.indexWhere((e) => e.id == petitionId);
+    if (index != -1) {
+      petitionsList[index] = petitionsList[index].copyWith(isSaved: isSaved);
+    }
+    if (selectedPetition.value?.id == petitionId) {
+      selectedPetition.value = selectedPetition.value!.copyWith(isSaved: isSaved);
+    }
+  }
+
+  Future<void> getPetitionSaveStatus(int petitionId) async {
+    final authController = Get.find<AuthController>();
+    if (authController.isGuest) return;
+    try {
+      final response = await _apiService.get(AppUrls.petitionSaveStatus(petitionId));
+      if (response != null && response.data != null && response.data['success'] == true) {
+        final bool isSaved = response.data['isSaved'] ?? false;
+        _updatePetitionState(petitionId, isSaved);
+      }
+    } catch (e) {
+      debugPrint('Error getting petition save status: $e');
+    }
+  }
+
   final RxBool isSavingNews = false.obs;
 
   Future<void> toggleSaveNews(NewsModel news) async {

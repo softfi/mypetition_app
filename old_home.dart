@@ -1,23 +1,23 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
+import 'dart:math' as math;
 import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/controllers/home_controller.dart';
 import 'package:my_petition_app/core/utils/app_shimmer.dart';
 import 'package:my_petition_app/features/home/widgets/feed_item_widgets.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
 import 'package:my_petition_app/core/utils/custom_text.dart';
-import 'package:my_petition_app/core/utils/share_helper.dart';
-import 'package:my_petition_app/core/config/app_urls.dart';
 
-class FeedListScreen extends StatefulWidget {
-  const FeedListScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<FeedListScreen> createState() => _FeedListScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _FeedListScreenState extends State<FeedListScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   final controller = Get.find<HomeController>();
   late PageController _pageController;
   int _currentPageIndex = 0;
@@ -34,18 +34,6 @@ class _FeedListScreenState extends State<FeedListScreen> {
           });
         }
       });
-
-    ever(controller.feedList, (_) {
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_pageController.hasClients) {
-            setState(() {
-              _currentPageValue = _pageController.page ?? 0.0;
-            });
-          }
-        });
-      }
-    });
   }
 
   @override
@@ -62,6 +50,8 @@ class _FeedListScreenState extends State<FeedListScreen> {
         if (controller.isLoading.value && controller.feedList.isEmpty) {
           return _buildFeedShimmer(context);
         }
+
+
 
         if (controller.feedList.isEmpty) {
           return Center(
@@ -80,6 +70,12 @@ class _FeedListScreenState extends State<FeedListScreen> {
           );
         }
 
+
+
+
+
+
+
         // Calculate indices and animation progress
         final int currentIndex = _currentPageValue.floor();
         final int nextIndex = currentIndex + 1;
@@ -96,57 +92,52 @@ class _FeedListScreenState extends State<FeedListScreen> {
               _buildStackItem(currentIndex, percent, isNext: false),
 
             // 3. PageView (Handles gestures and serves as the interaction layer)
-            RefreshIndicator(
-              onRefresh: () => controller.fetchFeed(isRefresh: true),
-              child: PageView.builder(
-                scrollDirection: Axis.vertical,
-                controller: _pageController,
-                physics: const PageScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                itemCount: controller.feedList.length + (controller.hasMore.value ? 1 : 0),
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPageIndex = index;
-                  });
-                  if (index == controller.feedList.length - 1 && controller.hasMore.value) {
-                    controller.loadMore();
-                  }
-                },
-                itemBuilder: (context, index) {
-                  if (index >= controller.feedList.length) {
-                    return _buildMoreLoadingIndicator();
-                  }
+            PageView.builder(
+              scrollDirection: Axis.vertical,
+              controller: _pageController,
+              physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+              itemCount: controller.feedList.length + (controller.hasMore.value ? 1 : 0),
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPageIndex = index;
+                });
+                if (index == controller.feedList.length - 1 && controller.hasMore.value) {
+                  controller.loadMore();
+                }
+              },
+              itemBuilder: (context, index) {
+                if (index >= controller.feedList.length) return const SizedBox.expand();
+                
+                final item = controller.feedList[index];
+                final screenHeight = MediaQuery.of(context).size.height;
 
-                  final item = controller.feedList[index];
-                  final screenHeight = MediaQuery.of(context).size.height;
-
-                  return Stack(
-                    children: [
-                      // Detail navigation detector
-                      GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () => _handleItemTap(item),
-                        child: const SizedBox.expand(),
-                      ),
-                      
-                      // Specific Bookmark Button hit area
-                      if (item.feedType == 'news')
-                        Positioned(
-                          top: screenHeight * 0.42 - 30,
-                          right: 20,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => Get.find<DiscoverController>().toggleSaveNews(item.data),
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              color: Colors.transparent,
-                            ),
+                return Stack(
+                  children: [
+                    // Detail navigation detector
+                    GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () => _handleItemTap(item),
+                      child: const SizedBox.expand(),
+                    ),
+                    
+                    // Specific Bookmark Button hit area
+                    if (item.feedType == 'news')
+                      Positioned(
+                        top: screenHeight * 0.42 - 30,
+                        right: 20,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Get.find<DiscoverController>().toggleSaveNews(item.data),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.transparent,
                           ),
                         ),
-                    ],
-                  );
-                },
-              ),
+                      ),
+                  ],
+                );
+              },
             ),
 
             // Jump to Top Button
@@ -157,6 +148,8 @@ class _FeedListScreenState extends State<FeedListScreen> {
     );
   }
 
+
+
   void _handleItemTap(dynamic item) {
     if (item.feedType == 'news') {
       final news = item.data;
@@ -165,9 +158,7 @@ class _FeedListScreenState extends State<FeedListScreen> {
         discoverController.newsList.insert(0, news);
       }
       final index = discoverController.newsList.indexWhere((e) => e.slug == news.slug);
-      Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': news.slug})?.then((_) {
-        controller.fetchFeed(isRefresh: true);
-      });
+      Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': news.slug});
     } else if (item.feedType == 'insight') {
       final insight = item.data;
       final discoverController = Get.find<DiscoverController>();
@@ -175,19 +166,14 @@ class _FeedListScreenState extends State<FeedListScreen> {
         discoverController.insightsList.insert(0, insight);
       }
       final index = discoverController.insightsList.indexWhere((e) => e.slug == insight.slug);
-      Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug})?.then((_) {
-        controller.fetchFeed(isRefresh: true);
-      });
+      Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug});
     } else if (item.feedType == 'petition') {
       final petition = item.data;
-      Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug)?.then((_) {
-        controller.fetchFeed(isRefresh: true);
-      });
+      Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug);
     }
   }
 
   Widget _buildStackItem(int index, double percent, {required bool isNext}) {
-    if (index < 0 || index >= controller.feedList.length) return const SizedBox.shrink();
     final item = controller.feedList[index];
     
     Widget child;
@@ -200,13 +186,6 @@ class _FeedListScreenState extends State<FeedListScreen> {
     } else {
       child = const SizedBox.shrink();
     }
-
-    // Explicitly bound the height and width to prevent Expanded errors causing black screen
-    child = SizedBox(
-      height: MediaQuery.of(context).size.height,
-      width: MediaQuery.of(context).size.width,
-      child: child,
-    );
 
     if (!isNext) {
       // Current Card: Slides UP and OUT
@@ -228,6 +207,11 @@ class _FeedListScreenState extends State<FeedListScreen> {
       );
     }
   }
+
+
+
+
+
 
   Widget _buildJumpToTopButton(BuildContext context) {
     return Positioned(
@@ -264,68 +248,36 @@ class _FeedListScreenState extends State<FeedListScreen> {
     );
   }
 
-
-
   Widget _buildFeedShimmer(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBgColor = isDark ? Theme.of(context).cardColor : Colors.white;
-    
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      margin: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: AppShimmer.fromColors(
-        context: context,
-        child: Column(
-          children: [
-            Expanded(
-              flex: 42,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBgColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                ),
+    return AppShimmer.fromColors(
+      context: context,
+      child: Column(
+        children: [
+          Expanded(
+            flex: 42,
+            child: Container(color: Colors.white),
+          ),
+          Expanded(
+            flex: 58,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 20, width: 100, color: Colors.white),
+                  const SizedBox(height: 16),
+                  Container(height: 30, width: double.infinity, color: Colors.white),
+                  const SizedBox(height: 12),
+                  Container(height: 20, width: double.infinity, color: Colors.white),
+                  const SizedBox(height: 8),
+                  Container(height: 20, width: double.infinity, color: Colors.white),
+                  const Spacer(),
+                  Container(height: 50, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                ],
               ),
             ),
-            Expanded(
-              flex: 58,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 20, width: 100, color: cardBgColor),
-                    const SizedBox(height: 16),
-                    Container(height: 30, width: double.infinity, color: cardBgColor),
-                    const SizedBox(height: 12),
-                    Container(height: 20, width: double.infinity, color: cardBgColor),
-                    const SizedBox(height: 8),
-                    Container(height: 20, width: double.infinity, color: cardBgColor),
-                    const Spacer(),
-                    Container(
-                      height: 50,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: cardBgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

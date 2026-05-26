@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:my_petition_app/core/service/api/api_services.dart';
 import 'package:my_petition_app/core/service/storage/storage_service.dart';
 import 'package:my_petition_app/core/service/connectivity/connectivity_controller.dart';
+import 'package:my_petition_app/core/service/deeplink/deep_link_service.dart';
 import 'package:my_petition_app/controllers/auth_controller.dart';
 import 'package:my_petition_app/controllers/location_controller.dart';
 import 'package:my_petition_app/controllers/splash_controller.dart';
@@ -17,6 +18,7 @@ class InitialBindings extends Bindings {
   void dependencies() {
     // Core Services
     Get.put<ConnectivityController>(ConnectivityController(), permanent: true);
+    Get.putAsync(() => DeepLinkService().init(), permanent: true);
 
     // Feature Controllers
     Get.lazyPut(() => SplashController());

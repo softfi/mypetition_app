@@ -55,6 +55,20 @@ class _WebViewScreenState extends State<WebViewScreen> {
               _hasError = false;
               _currentUrl = url;
             });
+            // Inject polyfills for APIs not available in Android WebView
+            _controller.runJavaScript('''
+              if (typeof Notification === 'undefined') {
+                window.Notification = class Notification {
+                  constructor(title, options) { this.title = title; this.options = options; }
+                  static get permission() { return 'denied'; }
+                  static requestPermission() { return Promise.resolve('denied'); }
+                  close() {}
+                };
+              }
+              if (typeof navigator.serviceWorker === 'undefined') {
+                navigator.serviceWorker = { register: () => Promise.resolve(), ready: Promise.resolve() };
+              }
+            ''');
           },
           onPageFinished: (url) async {
             setState(() {

@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:get/get.dart';
+import 'package:dio/dio.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:flutter/material.dart';
 import 'package:my_petition_app/core/utils/image_picker_service.dart';
 import 'package:my_petition_app/core/service/api/api_services.dart';
@@ -109,7 +110,9 @@ class ProfileController extends GetxController {
 
   // Clear image
   Future<bool> updateProfile({
-    required String name,
+    String? firstName,
+    String? middleName,
+    String? lastName,
     String? email,
     int? stateId,
     int? districtId,
@@ -119,32 +122,61 @@ class ProfileController extends GetxController {
 
     _isSubmitting.value = true;
     try {
-      final Map<String, dynamic> data = {
-        "category_ids": _selectedCategoryIds.toList(),
-        "name": name,
-        "email": email,
+      // Build FormData for multipart support (profile_image as binary)
+      final formFields = <String, dynamic>{
+        "first_name": firstName ?? "",
+        "middle_name": middleName ?? "",
+        "last_name": lastName ?? "",
       };
+
+      if (email != null && email.isNotEmpty) {
+        formFields["email"] = email;
+      }
+
+      if (user.mobile != null && user.mobile!.isNotEmpty) {
+        formFields["mobile"] = user.mobile;
+      }
 
       // Only send state and district if they are valid IDs (> 0)
       final int? sId = stateId ?? user.stateId;
       final int? dId = districtId ?? user.cityId;
 
       if (sId != null && sId > 0) {
-        data["state_id"] = sId.toString();
+        formFields["state_id"] = sId.toString();
       }
-      
       if (dId != null && dId > 0) {
-        data["district_id"] = dId.toString();
+        formFields["district_id"] = dId.toString();
       }
 
-      final response = await _apiService.put(
+      // Add category_ids as a list of strings
+      final formData = FormData();
+      for (final entry in formFields.entries) {
+        formData.fields.add(MapEntry(entry.key, entry.value.toString()));
+      }
+      for (final id in _selectedCategoryIds) {
+        formData.fields.add(MapEntry("category_ids[]", id.toString()));
+      }
+
+      // Attach profile image if selected
+      if (_profileImage.value != null) {
+        formData.files.add(MapEntry(
+          "profile_image",
+          await MultipartFile.fromFile(
+            _profileImage.value!.path,
+            filename: _profileImage.value!.path.split('/').last,
+          ),
+        ));
+      }
+
+      final response = await _apiService.dio.put(
         AppUrls.updateProfile,
-        data: data,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
       );
 
-      if (response != null && response.data['success'] == true) {
+      if (response.data != null && response.data['success'] == true) {
         CommonToast.showToastSuccess(response.data['message'] ?? "Profile updated successfully");
-        
+
         // Update local user data
         final updatedUserData = response.data['data'];
         if (updatedUserData != null) {
@@ -152,11 +184,12 @@ class ProfileController extends GetxController {
           final updatedUser = UserModel.fromJson({...updatedUserData, 'token': token});
           _currentUser.value = updatedUser;
           await _storageService.saveUserData(updatedUser.toJson());
+          _profileImage.value = null; // Clear selected image after successful upload
         }
-        
+
         return true;
       } else {
-        CommonToast.showToastError(response?.data['message'] ?? "Failed to update profile");
+        CommonToast.showToastError(response.data?['message'] ?? "Failed to update profile");
         return false;
       }
     } catch (e) {

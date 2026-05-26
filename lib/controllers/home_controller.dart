@@ -32,13 +32,14 @@ class HomeController extends GetxController {
     }
 
     try {
+      final authController = Get.find<AuthController>();
       final response = await _apiService.get(
         AppUrls.feed,
         queryParameters: {
           'page': currentPage.value,
           'limit': limit,
         },
-        useHeaders: false, // Don't send Authorization or device headers for feed
+        useHeaders: !authController.isGuest,
         options: isRefresh 
           ? CacheOptions(store: MemCacheStore(), policy: CachePolicy.noCache).toOptions() 
           : null,

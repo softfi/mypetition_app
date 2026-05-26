@@ -24,6 +24,7 @@ class PetitionModel {
   final int noCount;
   final int voteCount;
   final int views;
+  final bool isSaved;
 
   PetitionModel({
     required this.id,
@@ -51,6 +52,7 @@ class PetitionModel {
     required this.noCount,
     required this.voteCount,
     this.views = 0,
+    this.isSaved = false,
   });
 
   factory PetitionModel.fromJson(Map<String, dynamic> json) {
@@ -80,6 +82,37 @@ class PetitionModel {
       noCount: json['noCount'] ?? 0,
       voteCount: json['voteCount'] ?? 0,
       views: json['views'] ?? 0,
+    );
+  }
+
+  PetitionModel copyWith({bool? isSaved}) {
+    return PetitionModel(
+      id: id,
+      categoryId: categoryId,
+      stateId: stateId,
+      districtId: districtId,
+      title: title,
+      slug: slug,
+      description: description,
+      content: content,
+      s3ImageUrl: s3ImageUrl,
+      imageLinkUrl: imageLinkUrl,
+      userType: userType,
+      userId: userId,
+      status: status,
+      comment: comment,
+      isActive: isActive,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      deletedAt: deletedAt,
+      category: category,
+      state: state,
+      district: district,
+      yesCount: yesCount,
+      noCount: noCount,
+      voteCount: voteCount,
+      views: views,
+      isSaved: isSaved ?? this.isSaved,
     );
   }
 

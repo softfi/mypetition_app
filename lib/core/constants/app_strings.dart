@@ -66,7 +66,7 @@ class AppStrings {
   static const String trending = 'Trending';
   static const String searchForNews = 'Search for news';
   static const String viewAll = 'VIEW ALL';
-  static const String insights = 'Insights';
+  static const String insights = 'Stories';
   static const String latestNews = 'Latest News';
   static const String signPetition = 'Sign';
   static const String objectPetition = 'Object';
@@ -98,5 +98,9 @@ class AppStrings {
   // WebView Links
   static const String termsUrl = 'https://mypetition.co/p/terms-conditions';
   static const String privacyUrl = 'https://mypetition.co/p/privacy-policy';
+  static const String aboutUsUrl = 'https://mypetition.co/p/about-us';
+  static const String contactUsUrl = 'https://mypetition.co/contact';
+  static const String fileNewsUrl = 'https://mypetition.co/user/news';
+  static const String filePetitionUrl = 'https://mypetition.co/user/petitions/create';
 }
 

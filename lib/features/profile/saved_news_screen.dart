@@ -34,7 +34,10 @@ class SavedNewsScreen extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
       ),
-      body: Obx(() {
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Obx(() {
         if (controller.isLoading.value) {
           return _buildShimmerLoading();
         }
@@ -46,6 +49,7 @@ class SavedNewsScreen extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => controller.fetchSavedNews(isRefresh: true),
           child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             itemCount: controller.savedNewsList.length + (controller.hasMore.value ? 1 : 0),
             separatorBuilder: (_, __) => const SizedBox(height: 16),
@@ -64,6 +68,7 @@ class SavedNewsScreen extends StatelessWidget {
           ),
         );
       }),
+      ),
     );
   }
 
@@ -140,7 +145,7 @@ class SavedNewsScreen extends StatelessWidget {
                     maxLines: 2,
                     height: 1.3,
                   ),
-                  const SizedBox(height: 8),
+                  /*
                   AppText(
                     title: news.description,
                     fontSize: 13,
@@ -148,6 +153,7 @@ class SavedNewsScreen extends StatelessWidget {
                     maxLines: 2,
                     height: 1.4,
                   ),
+                  */
                   const SizedBox(height: 16),
                   Row(
                     children: [

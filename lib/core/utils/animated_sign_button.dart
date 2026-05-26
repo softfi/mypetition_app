@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/core/utils/custom_text.dart';
 
 class AnimatedSignButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
   final double height;
-  final double? width;
   final double borderRadius;
+  final double fontSize;
+  final double? width;
 
   const AnimatedSignButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.height = 48,
+    this.borderRadius = 14,
+    this.fontSize = 15,
     this.width,
-    this.borderRadius = 24,
   });
 
   @override
@@ -23,99 +24,87 @@ class AnimatedSignButton extends StatefulWidget {
 }
 
 class _AnimatedSignButtonState extends State<AnimatedSignButton>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _scaleAnimation;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
-
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.03), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.03, end: 1.0), weight: 50),
-    ]).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    const saffron = Color(0xFFFF9933);
+    const green = Color(0xFF138808);
+
     return GestureDetector(
       onTap: widget.onPressed,
       child: AnimatedBuilder(
-        animation: _pulseController,
+        animation: _animation,
         builder: (context, child) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              // Pulse Rings
-              ...List.generate(3, (index) {
-                final double delay = index * 0.3;
-                final double progress = (_pulseController.value - delay) % 1.0;
-                final double opacity = (1.0 - progress).clamp(0.0, 1.0);
-                final double scale = 1.0 + (progress * 0.4);
-
-                return Opacity(
-                  opacity: opacity * 0.4,
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      width: widget.width ?? double.infinity,
-                      height: widget.height,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(widget.borderRadius),
-                        border: Border.all(color: AppColors.primary, width: 2),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              
-              // Main Button
-              Transform.scale(
-                scale: _scaleAnimation.value,
-                child: Container(
-                  width: widget.width ?? double.infinity,
-                  height: widget.height,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(widget.borderRadius),
-                    color: AppColors.primary,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        AppText(
-                          title: widget.text.toUpperCase(),
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
-                        ),
-                      ],
-                    ),
-                  ),
+          final glowOffset = _animation.value * 4 + 2;
+          
+          return Container(
+            height: widget.height,
+            width: widget.width ?? double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: saffron.withOpacity(0.3 * (1 - _animation.value)),
+                  blurRadius: glowOffset,
+                  spreadRadius: _animation.value * 2,
+                  offset: const Offset(-2, 2),
                 ),
+                BoxShadow(
+                  color: green.withOpacity(0.3 * _animation.value),
+                  blurRadius: glowOffset,
+                  spreadRadius: _animation.value * 2,
+                  offset: const Offset(2, 2),
+                ),
+              ],
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: const [
+                  saffron,
+                  Color(0xFFFFAE59),
+                  Color(0xFF38A129),
+                  green,
+                ],
+                stops: [
+                  0.0,
+                  _animation.value * 0.4,
+                  0.6 + (1 - _animation.value) * 0.4,
+                  1.0,
+                ],
               ),
-            ],
+            ),
+            child: Center(
+              child: AppText(
+                title: widget.text,
+                fontSize: widget.fontSize,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
           );
         },
       ),

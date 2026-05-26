@@ -6,6 +6,7 @@ import 'package:my_petition_app/core/constants/app_text_styles.dart';
 import 'package:my_petition_app/core/utils/custom_button.dart';
 import 'package:my_petition_app/core/utils/custom_text.dart';
 import 'package:my_petition_app/core/utils/custom_text_field.dart';
+import 'package:my_petition_app/core/utils/animated_sign_button.dart';
 
 class PetitionDetailScreen extends StatefulWidget {
   const PetitionDetailScreen({super.key});
@@ -365,34 +366,9 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           color: Theme.of(context).colorScheme.onSurface,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: CustomButton(
-                text: 'Sign',
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: AppColors.accent,
-                fontSize: 13,
-                isFullWidth: true,
-                onPressed: () {},
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: CustomButton(
-                text: 'Object',
-                type: CustomButtonType.outlined,
-                height: 40,
-                borderRadius: 20,
-                borderColor: Theme.of(context).dividerColor,
-                textColor: Theme.of(context).colorScheme.onSurface,
-                fontSize: 13,
-                isFullWidth: true,
-                onPressed: () {},
-              ),
-            ),
-          ],
+        AnimatedSignButton(
+          text: 'Sign a Petition',
+          onPressed: () {},
         ),
       ],
     );

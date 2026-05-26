@@ -11,6 +11,10 @@ class UserModel {
   final String? emailVerifiedAt;
   final bool isMobileVerified;
   final bool isEmailVerified;
+  final String? firstName;
+  final String? middleName;
+  final String? lastName;
+  final String? profileImage;
 
   UserModel({
     this.id,
@@ -23,6 +27,10 @@ class UserModel {
     this.emailVerifiedAt,
     this.isMobileVerified = false,
     this.isEmailVerified = false,
+    this.firstName,
+    this.middleName,
+    this.lastName,
+    this.profileImage,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +48,10 @@ class UserModel {
       emailVerifiedAt: ApiSanitizer.sanitizeString(userData['email_verified_at']),
       isMobileVerified: userData['is_mobile_verified'] == true,
       isEmailVerified: userData['is_email_verified'] == true || (userData['email_verified_at'] != null),
+      firstName: ApiSanitizer.sanitizeString(userData['first_name']),
+      middleName: ApiSanitizer.sanitizeString(userData['middle_name']),
+      lastName: ApiSanitizer.sanitizeString(userData['last_name']),
+      profileImage: ApiSanitizer.sanitizeString(userData['profile_image']),
     );
   }
 
@@ -55,6 +67,10 @@ class UserModel {
       'email_verified_at': emailVerifiedAt,
       'is_mobile_verified': isMobileVerified,
       'is_email_verified': isEmailVerified,
+      'first_name': firstName,
+      'middle_name': middleName,
+      'last_name': lastName,
+      'profile_image': profileImage,
     };
   }
 }

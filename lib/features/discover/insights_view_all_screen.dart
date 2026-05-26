@@ -19,7 +19,7 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const AppText(
-          title: 'Insights',
+          title: 'Stories',
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -37,12 +37,13 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
         }
 
         if (controller.insightsList.isEmpty) {
-          return const Center(child: AppText(title: 'No insights available'));
+          return const Center(child: AppText(title: 'No stories available'));
         }
 
         return RefreshIndicator(
           onRefresh: () => controller.fetchInsights(),
           child: GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -72,61 +73,30 @@ class InsightsViewAllScreen extends GetView<DiscoverController> {
                      ),
                    ],
                  ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        child: imageUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                 placeholder: (context, url) => Shimmer.fromColors(
-                                   baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
-                                   highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
-                                   child: Container(color: Theme.of(context).cardColor),
-                                 ),
-                                 errorWidget: (context, url, error) => Container(
-                                   color: Theme.of(context).dividerColor,
-                                   child: const Icon(Icons.error),
-                                 ),
-                              )
-                            : Container(
-                                color: Theme.of(context).dividerColor,
-                                child: const Icon(Icons.image, color: AppColors.grey400),
-                              ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText(
-                            title: insight.title,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            maxLines: 1,
-                            textOverflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.access_time, size: 10, color: AppColors.textHint),
-                              const SizedBox(width: 4),
-                              AppText(
-                                title: AppDateFormatter.formatDateTime(insight.createdAt),
-                                fontSize: 9,
-                                color: AppColors.textHint,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: imageUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                           placeholder: (context, url) => Shimmer.fromColors(
+                             baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
+                             highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+                             child: Container(color: Theme.of(context).cardColor),
+                           ),
+                           errorWidget: (context, url, error) => Container(
+                             color: Theme.of(context).dividerColor,
+                             child: const Icon(Icons.error),
+                           ),
+                        )
+                      : Container(
+                          color: Theme.of(context).dividerColor,
+                          width: double.infinity,
+                          height: double.infinity,
+                          child: const Icon(Icons.image, color: AppColors.grey400),
+                        ),
                 ),
               ));
             },

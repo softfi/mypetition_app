@@ -46,6 +46,7 @@ class MyPetitionsScreen extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => profileController.fetchUserPetitions(refresh: true),
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             itemCount: profileController.userPetitions.length,
             itemBuilder: (context, index) {

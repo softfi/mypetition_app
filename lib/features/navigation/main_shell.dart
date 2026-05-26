@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:my_petition_app/core/constants/app_colors.dart';
 import 'package:my_petition_app/core/constants/app_strings.dart';
@@ -14,10 +15,10 @@ class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends State<MainShell>
+class MainShellState extends State<MainShell>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 2; // Always default to Home Feed (index 2) when app opens
   bool _isNavHidden = false;
@@ -27,8 +28,8 @@ class _MainShellState extends State<MainShell>
 
   final List<Widget> _screens = [
     const DiscoverScreen(),
-    const HomeScreen(),
-    const HomeScreen(),
+    const FeedListScreen(),
+    const FeedListScreen(),
     const PetitionDetailScreen(),
     const ProfileScreen(),
   ];
@@ -81,7 +82,7 @@ class _MainShellState extends State<MainShell>
     return false;
   }
 
-  void _switchTab(int index) {
+  void switchTab(int index) {
     setState(() => _currentIndex = index);
     
     // Call Feed API if Home tab (index 2) is clicked
@@ -101,11 +102,23 @@ class _MainShellState extends State<MainShell>
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    const double navHeight = 58.0; // Slimmer height
+    const double navHeight = 48.0;
     final double navTotalHeight = navHeight + bottomPadding;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    final bool isDarkTab = _currentIndex == 1 || _currentIndex == 2;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDarkTab
+          ? SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.black,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.white,
+              statusBarIconBrightness: Brightness.dark,
+            ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: NotificationListener<ScrollNotification>(
         onNotification: _handleScrollNotification,
         child: Stack(
@@ -189,6 +202,7 @@ class _MainShellState extends State<MainShell>
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -196,11 +210,11 @@ class _MainShellState extends State<MainShell>
       IconData icon, IconData activeIcon, String label, int index) {
     final isActive = _currentIndex == index;
     return GestureDetector(
-      onTap: () => _switchTab(index),
+      onTap: () => switchTab(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? AppColors.accent.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
@@ -208,7 +222,7 @@ class _MainShellState extends State<MainShell>
         child: Icon(
           isActive ? activeIcon : icon,
           color: isActive ? AppColors.accent : AppColors.grey500,
-          size: 24,
+          size: 20,
         ),
       ),
     );
@@ -217,11 +231,11 @@ class _MainShellState extends State<MainShell>
   Widget _buildHomeNavItem() {
     final isActive = _currentIndex == 2;
     return GestureDetector(
-      onTap: () => _switchTab(2),
+      onTap: () => switchTab(2),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? AppColors.accent.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
@@ -229,7 +243,7 @@ class _MainShellState extends State<MainShell>
         child: Icon(
           isActive ? Icons.feed : Icons.feed_outlined,
           color: isActive ? AppColors.accent : AppColors.grey500,
-          size: 26,
+          size: 22,
         ),
       ),
     );

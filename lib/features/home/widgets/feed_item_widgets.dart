@@ -19,6 +19,7 @@ import 'package:my_petition_app/core/utils/animated_sign_button.dart';
 import 'package:my_petition_app/core/utils/custom_button.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
 import 'package:my_petition_app/core/utils/app_shimmer.dart';
+import 'package:my_petition_app/controllers/home_controller.dart';
 import 'dart:ui';
 
 class NewsFeedItem extends StatelessWidget {
@@ -37,7 +38,9 @@ class NewsFeedItem extends StatelessWidget {
           discoverController.newsList.insert(0, news);
         }
         final index = discoverController.newsList.indexWhere((e) => e.slug == news.slug);
-        Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': news.slug});
+        Get.toNamed(AppRoutes.newsDetail, arguments: {'index': index, 'slug': news.slug})?.then((_) {
+          Get.find<HomeController>().fetchFeed(isRefresh: true);
+        });
       },
       child: Container(
       width: double.infinity,
@@ -75,6 +78,10 @@ class NewsFeedItem extends StatelessWidget {
                   placeholder: (context, url) => AppShimmer.fromColors(
                     context: context,
                     child: Container(color: Colors.white),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[200],
+                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
                   ),
                 ),
 
@@ -257,19 +264,21 @@ class NewsFeedItem extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                         color: Colors.grey[600],
                       ),
-                      const Spacer(),
-                      Icon(
-                        Icons.remove_red_eye_outlined,
-                        size: 12,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      AppText(
-                        title: '${news.views}',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
-                      ),
+                      if (news.views > 0) ...[
+                        const Spacer(),
+                        Icon(
+                          Icons.remove_red_eye_outlined,
+                          size: 12,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        AppText(
+                          title: '${news.views}',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -327,7 +336,9 @@ class InsightFeedItem extends StatelessWidget {
           discoverController.insightsList.insert(0, insight);
         }
         final index = discoverController.insightsList.indexWhere((e) => e.slug == insight.slug);
-        Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug});
+        Get.toNamed(AppRoutes.insightReels, arguments: {'index': index, 'slug': insight.slug})?.then((_) {
+          Get.find<HomeController>().fetchFeed(isRefresh: true);
+        });
       },
       child: Container(
       width: double.infinity,
@@ -355,10 +366,14 @@ class InsightFeedItem extends StatelessWidget {
           if (imageUrl != null)
             CachedNetworkImage(
               imageUrl: imageUrl,
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
               placeholder: (context, url) => AppShimmer.fromColors(
                 context: context,
                 child: Container(color: Colors.white),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey[900],
+                child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
               ),
             ),
 
@@ -370,13 +385,13 @@ class InsightFeedItem extends StatelessWidget {
                 colors: [
                   Colors.black.withOpacity(0.4),
                   Colors.transparent,
-                  Colors.black.withOpacity(0.9),
+                  // Colors.black.withOpacity(0.2),
                 ],
               ),
             ),
           ),
 
-          Positioned(
+          /* Positioned(
             bottom: 60,
             left: 20,
             right: 20,
@@ -425,7 +440,7 @@ class InsightFeedItem extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+          ), */
 
           /* const Positioned(
               top: 60,
@@ -448,7 +463,9 @@ class PetitionFeedItem extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug),
+      onTap: () => Get.toNamed(AppRoutes.petitionDetail, arguments: petition.slug)?.then((_) {
+        Get.find<HomeController>().fetchFeed(isRefresh: true);
+      }),
       child: Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 10),
@@ -483,6 +500,10 @@ class PetitionFeedItem extends StatelessWidget {
                   placeholder: (context, url) => AppShimmer.fromColors(
                     context: context,
                     child: Container(color: Colors.white),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[200],
+                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
                   ),
                 ),
                 Positioned(
@@ -584,46 +605,23 @@ class PetitionFeedItem extends StatelessWidget {
                         onPressed: () => Get.toNamed(
                           AppRoutes.petitionDetail,
                           arguments: petition.slug,
-                        ),
+                        )?.then((_) {
+                          Get.find<HomeController>().fetchFeed(isRefresh: true);
+                        }),
                       );
                     }
 
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: AnimatedSignButton(
-                            text: 'SIGN PETITION',
-                            height: 50,
-                            borderRadius: 8,
-                            onPressed: () {
-                              if (authController.isGuest) {
-                                GuestDialog.showLoginPrompt();
-                              } else {
-                                Get.toNamed(AppRoutes.emailVerify);
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: CustomButton(
-                            text: 'OBJECT',
-                            type: CustomButtonType.outlined,
-                            height: 50,
-                            borderRadius: 8,
-                            borderColor: Colors.grey[300],
-                            textColor: Colors.black,
-                            fontSize: 13,
-                            onPressed: () {
-                              if (authController.isGuest) {
-                                GuestDialog.showLoginPrompt();
-                              } else {
-                                Get.toNamed(AppRoutes.emailVerify);
-                              }
-                            },
-                          ),
-                        ),
-                      ],
+                    return AnimatedSignButton(
+                      text: 'Sign a Petition',
+                      height: 48,
+                      borderRadius: 14,
+                      onPressed: () {
+                        if (authController.isGuest) {
+                          GuestDialog.showLoginPrompt();
+                        } else {
+                          Get.toNamed(AppRoutes.emailVerify);
+                        }
+                      },
                     );
                   }),
                   const SizedBox(height: 10),

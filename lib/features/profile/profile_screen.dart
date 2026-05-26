@@ -13,11 +13,70 @@ import 'package:my_petition_app/core/routes/app_routes.dart';
 import 'edit_profile_screen.dart';
 import 'my_petitions_screen.dart';
 import 'saved_news_screen.dart';
+import 'saved_insights_screen.dart';
+import 'saved_petitions_screen.dart';
+import 'package:my_petition_app/controllers/saved_insights_controller.dart';
+import 'package:my_petition_app/controllers/saved_petitions_controller.dart';
 import 'package:my_petition_app/controllers/theme_controller.dart';
 import 'package:my_petition_app/core/utils/webview_screen.dart';
+import 'package:my_petition_app/core/config/app_urls.dart';
+import 'package:my_petition_app/core/service/api/api_services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:my_petition_app/core/utils/toast_message.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // '' = idle | 'petition' | 'news' — tracks which item is loading
+  String _launchingFor = '';
+
+  // ── Shared magic-link launcher ──────────────────────────────────────────
+  Future<void> _launchMagicLink(String redirectPath, String key) async {
+    if (_launchingFor.isNotEmpty) return;
+    setState(() => _launchingFor = key);
+
+    try {
+      final apiService = Get.find<ApiService>();
+      final response = await apiService.post(AppUrls.generateMagicLink);
+
+      if (response != null &&
+          response.statusCode == 200 &&
+          response.data['success'] == true) {
+        final token = response.data['data']['token'] as String?;
+
+        if (token != null && token.isNotEmpty) {
+          final uri = Uri.parse(
+            '${AppUrls.webBaseUrl}/auto-login?token=$token&redirect=$redirectPath',
+          );
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            CommonToast.showToastError('Could not open browser.');
+          }
+        } else {
+          CommonToast.showToastError('Invalid magic link response.');
+        }
+      } else {
+        final msg = response?.data?['message'] as String?;
+        CommonToast.showToastError(msg ?? 'Failed to generate magic link.');
+      }
+    } catch (e) {
+      CommonToast.showToastError('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _launchingFor = '');
+    }
+  }
+
+  Future<void> _launchFilePetition() =>
+      _launchMagicLink('/user/petitions/create', 'petition');
+
+  Future<void> _launchNews() =>
+      _launchMagicLink('/user/news', 'news');
 
   static final _favItems = [
     (
@@ -128,13 +187,51 @@ class ProfileScreen extends StatelessWidget {
                     _buildOptionItem(
                       icon: Icons.campaign_outlined,
                       title: 'File a Petition',
-                      onTap: () => null,
+                      onTap: _launchFilePetition,
+                      trailing: _launchingFor == 'petition'
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
 
                     _buildOptionItem(
                       icon: Icons.newspaper_outlined,
                       title: 'Launch News',
-                      onTap: () => null,
+                      onTap: _launchNews,
+                      trailing: _launchingFor == 'news'
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    _buildOptionItem(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Edit Profile',
+                      onTap: () => Get.to(() => const EditProfileScreen()),
+                    ),
+
+                    _buildOptionItem(
+                      icon: Icons.description_outlined,
+                      title: 'My Petitions',
+                      onTap: () {
+                        profileController.fetchUserPetitions(refresh: true);
+                        Get.to(() => const MyPetitionsScreen());
+                      },
                     ),
 
                     _buildOptionItem(
@@ -142,18 +239,22 @@ class ProfileScreen extends StatelessWidget {
                       title: 'Saved News',
                       onTap: () => Get.to(() => const SavedNewsScreen()),
                     ),
-                    /////////
                     _buildOptionItem(
-                      icon: Icons.person_outline_rounded,
-                      title: 'Edit Profile',
-                      onTap: () => Get.to(() => const EditProfileScreen()),
-                    ),
-                    _buildOptionItem(
-                      icon: Icons.description_outlined,
-                      title: 'My Petitions',
+                      icon: Icons.lightbulb_outline,
+                      title: 'Saved Insights',
                       onTap: () {
-                        profileController.fetchUserPetitions(refresh: true);
-                        Get.to(() => const MyPetitionsScreen());
+                        Get.put(SavedInsightsController()).fetchSavedInsights(isRefresh: true);
+                        Get.to(() => const SavedInsightsScreen());
+                      },
+                    ),
+                    /////////
+
+                    _buildOptionItem(
+                      icon: Icons.bookmark_outline,
+                      title: 'Saved Petitions',
+                      onTap: () {
+                        Get.put(SavedPetitionsController()).fetchSavedPetitions(isRefresh: true);
+                        Get.to(() => const SavedPetitionsScreen());
                       },
                     ),
                     _buildOptionItem(
@@ -175,12 +276,18 @@ class ProfileScreen extends StatelessWidget {
                     _buildOptionItem(
                       icon: Icons.info_outline_rounded,
                       title: 'About Us',
-                      onTap: () {},
+                      onTap: () => Get.to(() => const WebViewScreen(
+                            url: AppStrings.aboutUsUrl,
+                            title: 'About Us',
+                          )),
                     ),
                     _buildOptionItem(
                       icon: Icons.contact_support_outlined,
                       title: 'Contact Us',
-                      onTap: () {},
+                      onTap: () => Get.to(() => const WebViewScreen(
+                            url: AppStrings.contactUsUrl,
+                            title: 'Contact Us',
+                          )),
                     ),
 
                     // Dark Mode Toggle (temporarily disabled)
@@ -300,8 +407,14 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(dynamic user) {
-    String initials = "";
-    if (user.name != null && user.name!.isNotEmpty) {
+    String initials = "U";
+    if (user.firstName != null && user.firstName!.isNotEmpty) {
+      if (user.lastName != null && user.lastName!.isNotEmpty) {
+        initials = '${user.firstName![0]}${user.lastName![0]}'.toUpperCase();
+      } else {
+        initials = user.firstName![0].toUpperCase();
+      }
+    } else if (user.name != null && user.name!.isNotEmpty) {
       List<String> names = user.name!.trim().split(RegExp(r'\s+'));
       if (names.length > 1) {
         initials = (names[0][0] + names[names.length - 1][0]).toUpperCase();
@@ -309,6 +422,8 @@ class ProfileScreen extends StatelessWidget {
         initials = names[0][0].toUpperCase();
       }
     }
+
+    final hasNetworkImage = user.profileImage != null && user.profileImage!.isNotEmpty;
 
     return Column(
       children: [
@@ -325,15 +440,23 @@ class ProfileScreen extends StatelessWidget {
                 offset: const Offset(0, 4),
               ),
             ],
+            image: hasNetworkImage
+                ? DecorationImage(
+                    image: NetworkImage('${AppUrls.s3BaseUrl}${user.profileImage}'),
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          child: Center(
-            child: AppText(
-              title: initials.isEmpty ? 'U' : initials,
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
+          child: hasNetworkImage
+              ? null
+              : Center(
+                  child: AppText(
+                    title: initials,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
         ),
         const SizedBox(height: 16),
         AppText(

@@ -9,6 +9,7 @@ import 'package:my_petition_app/controllers/profile_controller.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
 import 'package:my_petition_app/core/models/category_model.dart';
+import 'package:my_petition_app/core/utils/toast_message.dart';
 
 class EnterDetailsScreen extends StatefulWidget {
   const EnterDetailsScreen({super.key});
@@ -18,7 +19,9 @@ class EnterDetailsScreen extends StatefulWidget {
 }
 
 class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isTermsAccepted = false;
@@ -36,7 +39,9 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -81,24 +86,51 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
 
                   const SizedBox(height: 36),
 
-                  // Name label
+                  // First Name
                   AppText(
-                    title: AppStrings.enterYourName,
+                    title: "First Name",
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   const SizedBox(height: 8),
-
                   CustomTextField(
-                    hint: AppStrings.enterYourNameHint,
-                    controller: _nameController,
+                    hint: "Enter your first name",
+                    controller: _firstNameController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
+                        return 'Please enter your first name';
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Middle Name
+                  AppText(
+                    title: "Middle Name (Optional)",
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(height: 8),
+                  CustomTextField(
+                    hint: "Enter your middle name",
+                    controller: _middleNameController,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Last Name
+                  AppText(
+                    title: "Last Name (Optional)",
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(height: 8),
+                  CustomTextField(
+                    hint: "Enter your last name",
+                    controller: _lastNameController,
                   ),
 
                   const SizedBox(height: 24),
@@ -224,12 +256,14 @@ class _EnterDetailsScreenState extends State<EnterDetailsScreen> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         if (!_isTermsAccepted) {
-                          Get.snackbar("Terms & Conditions", "Please accept terms and conditions");
+                          CommonToast.showToastError("Please accept terms and conditions");
                           return;
                         }
                         
                         final success = await _profileController.updateProfile(
-                          name: _nameController.text.trim(),
+                          firstName: _firstNameController.text.trim(),
+                          middleName: _middleNameController.text.trim(),
+                          lastName: _lastNameController.text.trim(),
                           email: _emailController.text.trim(),
                         );
                         

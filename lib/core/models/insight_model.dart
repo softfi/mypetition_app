@@ -9,6 +9,8 @@ class InsightModel {
   final List<InsightFile> files;
   final int fileCount;
 
+  final bool isSaved;
+
   InsightModel({
     required this.id,
     required this.title,
@@ -19,6 +21,7 @@ class InsightModel {
     this.deletedAt,
     required this.files,
     required this.fileCount,
+    this.isSaved = false,
   });
 
   factory InsightModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +35,33 @@ class InsightModel {
       deletedAt: json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
       files: (json['files'] as List?)?.map((i) => InsightFile.fromJson(i)).toList() ?? [],
       fileCount: json['fileCount'] ?? 0,
+      isSaved: json['isSaved'] ?? false,
+    );
+  }
+
+  InsightModel copyWith({
+    int? id,
+    String? title,
+    String? slug,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    List<InsightFile>? files,
+    int? fileCount,
+    bool? isSaved,
+  }) {
+    return InsightModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      slug: slug ?? this.slug,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      files: files ?? this.files,
+      fileCount: fileCount ?? this.fileCount,
+      isSaved: isSaved ?? this.isSaved,
     );
   }
 }

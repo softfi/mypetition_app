@@ -4,15 +4,15 @@ class AppColors {
   AppColors._();
 
   // Primary
-  static const Color primary = Color(0xFFE7000A);
-  static const Color primaryLight = Color(0xFFFF4D4D);
-  static const Color primaryDark = Color(0xFFA30007);
+  static const Color primary = Color(0xFF0290E8);
+  static const Color primaryLight = Color(0xFF4CB3F0);
+  static const Color primaryDark = Color(0xFF0164A2);
 
-  static const Color green = Color(0xFFE7000A); // Setting this to primary as well since user wanted global change
+  static const Color green = Color(0xFF0290E8); // Setting this to primary as well since user wanted global change
 
   // Accent
-  static const Color accent = Color(0xFFE7000A);
-  static const Color accentLight = Color(0xFFFF4D4D);
+  static const Color accent = Color(0xFF0290E8);
+  static const Color accentLight = Color(0xFF4CB3F0);
 
   // Background
   static const Color background = Color(0xFFFFFFFF);
@@ -36,7 +36,7 @@ class AppColors {
   // Border
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderLight = Color(0xFFF3F4F6);
-  static const Color borderFocused = Color(0xFFE7000A);
+  static const Color borderFocused = Color(0xFF0290E8);
 
   // Status
   static const Color success = Color(0xFF22C55E);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
 import 'package:my_petition_app/core/constants/app_colors.dart';
@@ -15,6 +16,7 @@ import 'package:my_petition_app/core/utils/custom_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'widgets/font_size_controls.dart';
 import 'package:my_petition_app/core/utils/share_helper.dart';
+import 'package:my_petition_app/core/models/news_comment_model.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   const NewsDetailScreen({super.key});
@@ -27,7 +29,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   final controller = Get.find<DiscoverController>();
   late PageController _pageController;
   late int _currentIndex;
-  bool _commentsExpanded = false;
+  bool _commentsExpanded = true;
+  final TextEditingController _commentCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -38,18 +41,22 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
     if (args is Map) {
       targetSlug = args['slug'];
-      _currentIndex = args['index'] ?? controller.newsList.indexWhere((e) => e.slug == targetSlug);
+      _currentIndex =
+          args['index'] ??
+          controller.newsList.indexWhere((e) => e.slug == targetSlug);
       if (_currentIndex == -1) _currentIndex = 0;
     } else if (args is String) {
       targetSlug = args;
-      _currentIndex = controller.newsList.indexWhere((e) => e.slug == targetSlug || e.id.toString() == targetSlug);
+      _currentIndex = controller.newsList.indexWhere(
+        (e) => e.slug == targetSlug || e.id.toString() == targetSlug,
+      );
       if (_currentIndex == -1) _currentIndex = 0;
     } else {
       _currentIndex = 0;
     }
 
     _pageController = PageController(initialPage: _currentIndex);
-    
+
     // Initial fetch
     if (targetSlug != null) {
       controller.fetchNewsDetail(targetSlug);
@@ -61,6 +68,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _commentCtrl.dispose();
     super.dispose();
   }
 
@@ -69,7 +77,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     setState(() {
       _currentIndex = index;
     });
-    
+
     // Fetch detail for new page
     final news = controller.newsList[index];
     controller.fetchNewsDetail(news.slug);
@@ -82,24 +90,66 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark
+          ? SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+            ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
-        title: Obx(() => AppText(
-          title: 'News ${_currentIndex + 1}/${controller.newsList.length}',
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        )),
+        title: Obx(() {
+          // 'News ${_currentIndex + 1}/${controller.newsList.length}'
+          final newsItem =
+              controller.newsList.isNotEmpty &&
+                  _currentIndex < controller.newsList.length
+              ? controller.newsList[_currentIndex]
+              : null;
+          final detailedNews = controller.selectedNews.value;
+
+          final categoryName =
+              detailedNews?.category?.name ??
+              newsItem?.category?.name ??
+              'News Details';
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: AppText(
+              title: categoryName.toUpperCase(),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.accent,
+            ),
+          );
+        }),
         actions: [
           IconButton(
-            icon: Icon(Icons.share_outlined, color: Theme.of(context).colorScheme.onSurface),
+            icon: Icon(
+              Icons.share_outlined,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             onPressed: () {
               final news = controller.selectedNews.value;
               if (news != null) {
@@ -117,17 +167,23 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             return IconButton(
               icon: Icon(
                 news.isSaved ? Icons.bookmark : Icons.bookmark_border,
-                color: news.isSaved ? AppColors.accent : Theme.of(context).colorScheme.onSurface,
+                color: news.isSaved
+                    ? AppColors.accent
+                    : Theme.of(context).colorScheme.onSurface,
               ),
               onPressed: () => controller.toggleSaveNews(news),
             );
           }),
         ],
-
       ),
       floatingActionButton: const FontSizeControls(),
-      body: Obx(() {
-        final totalCount = controller.newsList.isEmpty ? 1 : controller.newsList.length;
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Obx(() {
+        final totalCount = controller.newsList.isEmpty
+            ? 1
+            : controller.newsList.length;
         return PageView.builder(
           controller: _pageController,
           onPageChanged: _onPageChanged,
@@ -138,21 +194,24 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               // We use a unique check for slug to match current fetched detail
               final news = controller.selectedNews.value;
               final isCurrentPageLoading = controller.isNewsDetailLoading.value;
-              
+
               // If we are on this index, we show the fetched detail
               if (index == _currentIndex) {
                 if (isCurrentPageLoading) return _buildLoadingShimmer();
-                if (news == null) return const Center(child: AppText(title: 'News not found'));
+                if (news == null)
+                  return const Center(child: AppText(title: 'News not found'));
                 return _buildNewsContent(news);
               }
-              
+
               // Placeholder for other pages to allow smooth swiping
               return _buildLoadingShimmer();
             });
           },
         );
       }),
-    );
+      ),   // SafeArea
+    ),   // Scaffold
+    );   // AnnotatedRegion
   }
 
   Widget _buildNewsContent(dynamic news) {
@@ -165,38 +224,47 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                if (news.category != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: AppText(
-                      title: news.category!.name.toUpperCase(),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                const SizedBox(width: 12),
+                // if (news.category != null)
+                //   Container(
+                //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                //     decoration: BoxDecoration(
+                //       color: AppColors.accent.withOpacity(0.1),
+                //       borderRadius: BorderRadius.circular(4),
+                //     ),
+                //     child: AppText(
+                //       title: news.category!.name.toUpperCase(),
+                //       fontSize: 10,
+                //       fontWeight: FontWeight.w700,
+                //       color: AppColors.accent,
+                //     ),
+                //   ),
+                // const SizedBox(width: 12),
                 AppText(
                   title: AppDateFormatter.formatDateTime(news.createdAt),
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
-                const Spacer(),
-                if (news.views >= 100000)
+                if (news.views > 0) ...[
+                  const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.local_fire_department_rounded, size: 13, color: Colors.orange),
+                        const Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 13,
+                          color: Colors.orange,
+                        ),
                         const SizedBox(width: 4),
                         AppText(
                           title: _formatViews(news.views),
@@ -206,28 +274,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         ),
                       ],
                     ),
-                  )
-                else
-                  SizedBox.shrink()
-                  // Container(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  //   decoration: BoxDecoration(
-                  //     color: AppColors.primary.withOpacity(0.08),
-                  //     borderRadius: BorderRadius.circular(6),
-                  //   ),
-                  //   child: Row(
-                  //     children: [
-                  //       Icon(Icons.info_outline_rounded, size: 12, color: AppColors.primary),
-                  //       const SizedBox(width: 4),
-                  //       AppText(
-                  //         title: 'Stats visible after 100K views',
-                  //         fontSize: 9,
-                  //         fontWeight: FontWeight.w600,
-                  //         color: AppColors.primary,
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -235,11 +283,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
           // Title
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: AppText.title(
-              title: news.title,
-              fontSize: 22,
-              height: 1.3,
-            ),
+            child: AppText.title(title: news.title, fontSize: 22, height: 1.3),
           ),
 
           // Image
@@ -250,14 +294,22 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             height: 240,
             fit: BoxFit.cover,
             placeholder: (context, url) => Shimmer.fromColors(
-              baseColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey200 : Colors.grey[800]!,
-              highlightColor: Theme.of(context).brightness == Brightness.light ? AppColors.grey100 : Colors.grey[700]!,
+              baseColor: Theme.of(context).brightness == Brightness.light
+                  ? AppColors.grey200
+                  : Colors.grey[800]!,
+              highlightColor: Theme.of(context).brightness == Brightness.light
+                  ? AppColors.grey100
+                  : Colors.grey[700]!,
               child: Container(color: Theme.of(context).cardColor),
             ),
             errorWidget: (context, url, error) => Container(
               height: 240,
               color: Theme.of(context).dividerColor,
-              child: const Icon(Icons.image, size: 50, color: AppColors.grey400),
+              child: const Icon(
+                Icons.image,
+                size: 50,
+                color: AppColors.grey400,
+              ),
             ),
           ),
           // if (news.imageLinkUrl != null && news.imageLinkUrl!.isNotEmpty)
@@ -286,7 +338,6 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
           //     ),
           //   ),
 
-
           // Description
           if (news.description.isNotEmpty)
             Padding(
@@ -301,7 +352,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   ),
                 ),
                 child: AppText(
-                  title: "${news.description }",
+                  title: "${news.description}",
                   fontSize: 16 * controller.fontSizeFactor.value,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -330,7 +381,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           onTapUrl: (url) async {
                             try {
                               final uri = Uri.parse(url);
-                              await launchUrl(uri, mode: LaunchMode.platformDefault);
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.platformDefault,
+                              );
                               return true;
                             } catch (e) {
                               debugPrint('Error launching URL: $e');
@@ -339,15 +393,18 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           },
                           customStylesBuilder: (element) {
                             if (element.localName == 'a') {
-                              return {'text-decoration': 'none', 'color': '#007AFF'}; // Blue color but no underline
+                              return {
+                                'text-decoration': 'none',
+                                'color': '#007AFF',
+                              }; // Blue color but no underline
                             }
                             return null;
                           },
-                            textStyle: TextStyle(
-                              fontSize: 16 * controller.fontSizeFactor.value,
-                              height: 1.6,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                          textStyle: TextStyle(
+                            fontSize: 16 * controller.fontSizeFactor.value,
+                            height: 1.6,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
@@ -364,8 +421,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
-                          Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+                          Theme.of(
+                            context,
+                          ).scaffoldBackgroundColor.withOpacity(0.0),
+                          Theme.of(
+                            context,
+                          ).scaffoldBackgroundColor.withOpacity(0.8),
                           Theme.of(context).scaffoldBackgroundColor,
                         ],
                       ),
@@ -374,7 +435,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 40,
+                            vertical: 20,
+                          ),
                           child: CustomButton(
                             text: 'Read More',
                             type: CustomButtonType.outlined,
@@ -427,13 +491,13 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   }
 
   String _formatViews(int views) {
-    if (views >= 1000000) return '${(views / 1000000).toStringAsFixed(1)}M views';
+    if (views >= 1000000)
+      return '${(views / 1000000).toStringAsFixed(1)}M views';
     if (views >= 1000) return '${(views / 1000).toStringAsFixed(0)}K views';
     return '$views views';
   }
 
   Widget _buildCommentsSection(dynamic news) {
-    final TextEditingController commentCtrl = TextEditingController();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -460,24 +524,34 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   fontWeight: FontWeight.w700,
                 ),
                 const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: AppText(
-                    title: '3',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
+                Obx(
+                  () => controller.newsCommentsList.isNotEmpty
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: AppText(
+                            title: '${controller.newsCommentsList.length}',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 const Spacer(),
                 AnimatedRotation(
                   turns: _commentsExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 300),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 24,
+                  ),
                 ),
               ],
             ),
@@ -496,55 +570,94 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.person, size: 20, color: AppColors.primary),
-                    ),
-                    const SizedBox(width: 10),
+                    // Container(
+                    //   width: 36,
+                    //   height: 36,
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.primary.withOpacity(0.15),
+                    //     shape: BoxShape.circle,
+                    //   ),
+                    //   child: const Icon(
+                    //     Icons.person,
+                    //     size: 20,
+                    //     color: AppColors.primary,
+                    //   ),
+                    // ),
+                    // const SizedBox(width: 10),
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
                         child: Row(
                           children: [
                             Expanded(
                               child: TextField(
-                                controller: commentCtrl,
+                                controller: _commentCtrl,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Write a comment...',
                                   hintStyle: TextStyle(
                                     fontSize: 13,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.4),
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 10),
                             Padding(
                               padding: const EdgeInsets.only(right: 6),
                               child: GestureDetector(
-                                onTap: () {},
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
+                                onTap: () async {
+                                  if (_commentCtrl.text.trim().isNotEmpty) {
+                                    final success = await controller
+                                        .addNewsComment(
+                                          news.id,
+                                          _commentCtrl.text,
+                                        );
+                                    if (success) {
+                                      _commentCtrl.clear();
+                                    }
+                                  }
+                                },
+                                child: Obx(
+                                  () => Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: controller.isSubmittingComment.value
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.send_rounded,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
                                   ),
-                                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
                                 ),
                               ),
                             ),
@@ -556,27 +669,73 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildCommentItem(
-                avatar: 'R',
-                name: 'Rahul Sharma',
-                time: '2 hours ago',
-                text: 'Very informative article. Thanks for sharing this!',
-                likes: 12,
-              ),
-              _buildCommentItem(
-                avatar: 'P',
-                name: 'Priya Singh',
-                time: '5 hours ago',
-                text: 'Great coverage on this topic. Keep it up!',
-                likes: 7,
-              ),
-              _buildCommentItem(
-                avatar: 'A',
-                name: 'Amit Kumar',
-                time: '1 day ago',
-                text: 'This is exactly what I was looking for. Very well explained.',
-                likes: 24,
-              ),
+              Obx(() {
+                if (controller.isNewsCommentsLoading.value) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                // Only render comment list if API returned comments
+                if (controller.newsCommentsList.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppColors.grey100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 32,
+                            color: AppColors.grey400,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const AppText(
+                          title: 'No comments yet',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.grey500,
+                        ),
+                        const SizedBox(height: 4),
+                        const AppText(
+                          title: 'Be the first to share your thoughts!',
+                          fontSize: 12,
+                          color: AppColors.textHint,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: controller.newsCommentsList.map((
+                    NewsCommentModel comment,
+                  ) {
+                    final String avatarLetter =
+                        comment.user?.name.isNotEmpty == true
+                        ? comment.user!.name[0].toUpperCase()
+                        : 'U';
+                    final String timeText = AppDateFormatter.formatDate(
+                      comment.createdAt,
+                    );
+
+                    return _buildCommentItem(
+                      avatar: avatarLetter,
+                      name: comment.user?.name ?? 'User',
+                      time: timeText,
+                      text: comment.comment,
+                      likes: 0,
+                      profileImage: comment.user?.profileImage,
+                    );
+                  }).toList(),
+                );
+              }),
               const SizedBox(height: 8),
             ],
           ),
@@ -586,40 +745,71 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
-
-
   Widget _buildCommentItem({
     required String avatar,
     required String name,
     required String time,
     required String text,
     required int likes,
+    String? profileImage,
   }) {
+
+
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 36,
+          // Avatar — top-padded to align with name text inside bubble
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Container(
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: AppText(
-                title: avatar,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
+            child: ClipOval(
+              child: profileImage != null && profileImage.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: profileImage.startsWith('http')
+                          ? profileImage
+                          : 'https://api.mypetition.co$profileImage',
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: AppText(
+                          title: avatar,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: AppText(
+                        title: avatar,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+            ),  // end ClipOval
+            ),  // end Container
+          ),    // end Padding
+          const SizedBox(width: 8),
+          // Bubble
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: const BorderRadius.only(
@@ -631,14 +821,18 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name + Date row
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      AppText(
-                        title: name,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: AppText(
+                          title: name,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       AppText(
                         title: time,
                         fontSize: 11,
@@ -646,31 +840,16 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
+                  // Comment text
                   AppText(
                     title: text,
                     fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.85),
                     height: 1.4,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.thumb_up_outlined, size: 14, color: AppColors.grey500),
-                      const SizedBox(width: 4),
-                      AppText(
-                        title: '$likes',
-                        fontSize: 12,
-                        color: AppColors.grey500,
-                      ),
-                      const SizedBox(width: 16),
-                      AppText(
-                        title: 'Reply',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -690,20 +869,32 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             padding: const EdgeInsets.all(16),
             child: AppShimmer.fromColors(
               context: context,
-              child: Container(height: 20, width: 150, color: Theme.of(context).cardColor),
+              child: Container(
+                height: 20,
+                width: 150,
+                color: Theme.of(context).cardColor,
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: AppShimmer.fromColors(
               context: context,
-              child: Container(height: 80, width: double.infinity, color: Theme.of(context).cardColor),
+              child: Container(
+                height: 80,
+                width: double.infinity,
+                color: Theme.of(context).cardColor,
+              ),
             ),
           ),
           const SizedBox(height: 20),
           AppShimmer.fromColors(
             context: context,
-            child: Container(height: 240, width: double.infinity, color: Theme.of(context).cardColor),
+            child: Container(
+              height: 240,
+              width: double.infinity,
+              color: Theme.of(context).cardColor,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -714,7 +905,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: AppShimmer.fromColors(
                     context: context,
-                    child: Container(height: 16, width: double.infinity, color: Theme.of(context).cardColor),
+                    child: Container(
+                      height: 16,
+                      width: double.infinity,
+                      color: Theme.of(context).cardColor,
+                    ),
                   ),
                 ),
               ),

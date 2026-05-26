@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:my_petition_app/core/service/storage/storage_service.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
+import 'package:my_petition_app/core/service/deeplink/deep_link_service.dart';
 
 class SplashController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
@@ -16,6 +17,16 @@ class SplashController extends GetxController {
 
     if (_storageService.isUserLoggedIn()) {
       Get.offAllNamed(AppRoutes.main);
+      
+      // Delay slightly to let MainShell load, then process pending deep link
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (Get.isRegistered<DeepLinkService>()) {
+          final deepLinkService = Get.find<DeepLinkService>();
+          if (deepLinkService.hasPendingDeepLink) {
+            deepLinkService.handlePendingDeepLink();
+          }
+        }
+      });
     } else {
       Get.offAllNamed(AppRoutes.login);
     }

@@ -14,6 +14,8 @@ import '../../features/discover/insight_reels_screen.dart';
 import '../../features/discover/petitions_view_all_screen.dart';
 import '../../features/discover/petition_detail_screen.dart';
 import '../../features/auth/screens/email_verify_screen.dart';
+import '../../features/profile/saved_petitions_screen.dart';
+import '../../features/search/search_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -33,6 +35,8 @@ class AppRoutes {
   static const String insightReels = '/insight-reels';
   static const String petitionsViewAll = '/petitions-view-all';
   static const String petitionDetail = '/petition-detail';
+  static const String savedPetitions = '/saved-petitions';
+  static const String search = '/search';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -66,6 +70,10 @@ class AppRoutes {
         return _buildRoute(const PetitionsViewAllScreen(), settings);
       case petitionDetail:
         return _buildRoute(const PetitionDetailScreen(), settings);
+      case savedPetitions:
+        return _buildRoute(const SavedPetitionsScreen(), settings);
+      case search:
+        return _buildRoute(const SearchScreen(), settings);
       default:
         return _buildRoute(const SplashScreen(), settings);
     }

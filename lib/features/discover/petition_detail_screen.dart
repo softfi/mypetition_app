@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:my_petition_app/controllers/discover_controller.dart';
 import 'package:my_petition_app/core/constants/app_colors.dart';
@@ -16,7 +17,6 @@ import 'package:my_petition_app/core/utils/guest_dialog.dart';
 import 'package:my_petition_app/core/utils/toast_message.dart';
 import 'package:my_petition_app/core/routes/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:my_petition_app/core/utils/animated_border_button.dart';
 import 'package:my_petition_app/core/utils/share_helper.dart';
 import 'widgets/font_size_controls.dart';
 import 'package:my_petition_app/core/models/petition_model.dart';
@@ -39,12 +39,14 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
     final args = Get.arguments;
     if (args is String) {
       slug = args;
-      controller.fetchPetitionDetail(slug);
+      controller.fetchPetitionDetail(slug).then((_) {
+        final petition = controller.selectedPetition.value;
+        if (petition != null) controller.getPetitionSaveStatus(petition.id);
+      });
     } else if (args is PetitionModel) {
       slug = args.slug;
       controller.selectedPetition.value = args;
-      // We don't call fetchPetitionDetail here because user said there is no API for My Petitions detail
-      // This ensures 'pending' petitions from "My Petitions" list show up correctly.
+      controller.getPetitionSaveStatus(args.id);
     }
   }
 
@@ -52,7 +54,19 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark
+          ? SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+            ),
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface, size: 20),
@@ -72,14 +86,31 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
               }
             },
           ),
-          IconButton(
-            icon: Icon(Icons.bookmark_border, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {},
-          ),
+          Obx(() {
+            final petition = controller.selectedPetition.value;
+            if (petition == null) {
+              return IconButton(
+                icon: Icon(Icons.bookmark_border, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () {},
+              );
+            }
+            return IconButton(
+              icon: Icon(
+                petition.isSaved ? Icons.bookmark : Icons.bookmark_border,
+                color: petition.isSaved
+                    ? AppColors.primary
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => controller.toggleSavePetition(petition),
+            );
+          }),
         ],
       ),
       floatingActionButton: const FontSizeControls(),
-      body: Obx(() {
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Obx(() {
         if (controller.isPetitionDetailLoading.value) {
           return _buildLoadingShimmer();
         }
@@ -458,51 +489,23 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                         );
                       }
 
-                      // Otherwise show Sign/Object
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: AnimatedBorderButton(
-                                text: AppStrings.signPetition,
-                                height: 48,
-                                borderRadius: 14,
-                                fontSize: 15,
-                                onPressed: () {
-                                  if (authController.isGuest) {
-                                    GuestDialog.showLoginPrompt();
-                                  } else {
-                                    Get.toNamed(AppRoutes.emailVerify);
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CustomButton(
-                                text: AppStrings.objectPetition,
-                                type: CustomButtonType.outlined,
-                                height: 48,
-                                borderRadius: 14,
-                                borderColor: Theme.of(context).dividerColor,
-                                textColor: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 15,
-                                onPressed: () {
-                                  if (authController.isGuest) {
-                                    GuestDialog.showLoginPrompt();
-                                  } else {
-                                    Get.toNamed(AppRoutes.emailVerify);
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        );
+                      // Otherwise show Sign a Petition button (same design as discover screen)
+                      return _buildAnimatedSaffronGreenButton(
+                        text: 'Sign a Petition',
+                        onPressed: () {
+                          if (authController.isGuest) {
+                            GuestDialog.showLoginPrompt();
+                          } else {
+                            Get.toNamed(AppRoutes.emailVerify);
+                          }
+                        },
+                      );
                     }),
                     
-                    const SizedBox(height: 32),
-                    
-                    // Comments Section
-                    _buildCommentsSection(context, petition),
+                    // const SizedBox(height: 32),
+                    //
+                    // // Comments Section
+                    // _buildCommentsSection(context, petition),
 
                     const SizedBox(height: 80),
                   ],
@@ -512,8 +515,15 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
           ),
         );
       }),
-    );
+    ),   // SafeArea
+    ),   // Scaffold
+    );   // AnnotatedRegion
   }
+
+
+
+
+
 
   Widget _buildCommentsSection(BuildContext context, PetitionModel petition) {
     final TextEditingController commentCtrl = TextEditingController();
@@ -709,20 +719,22 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                   child: Obx(() => CustomButton(
                     text: 'YES',
                     backgroundColor: AppColors.green,
-                    isLoading: controller.isVoting.value,
-                    onPressed: () async {
-                      final success = await controller.castVote(
-                        petitionId: controller.selectedPetition.value!.id!,
-                        vote: 'yes',
-                        comment: commentController.text,
-                      );
-                      if (success) {
-                        Get.back();
-                        CommonToast.showToastSuccess('Vote cast successfully');
-                      } else {
-                        CommonToast.showToastError('Failed to cast vote');
-                      }
-                    },
+                    isLoading: controller.votingFor.value == 'yes',
+                    onPressed: controller.votingFor.value.isNotEmpty
+                        ? () {} // disabled while any vote is in-flight
+                        : () async {
+                            final success = await controller.castVote(
+                              petitionId: controller.selectedPetition.value!.id!,
+                              vote: 'yes',
+                              comment: commentController.text,
+                            );
+                            if (success) {
+                              Get.back();
+                              CommonToast.showToastSuccess('Vote cast successfully');
+                            } else {
+                              CommonToast.showToastError('Failed to cast vote');
+                            }
+                          },
                   )),
                 ),
                 const SizedBox(width: 12),
@@ -730,20 +742,22 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
                   child: Obx(() => CustomButton(
                     text: 'NO',
                     backgroundColor: AppColors.error,
-                    isLoading: controller.isVoting.value,
-                    onPressed: () async {
-                      final success = await controller.castVote(
-                        petitionId: controller.selectedPetition.value!.id!,
-                        vote: 'no',
-                        comment: commentController.text,
-                      );
-                      if (success) {
-                        Get.back();
-                        CommonToast.showToastSuccess('Vote cast successfully');
-                      } else {
-                        CommonToast.showToastError('Failed to cast vote');
-                      }
-                    },
+                    isLoading: controller.votingFor.value == 'no',
+                    onPressed: controller.votingFor.value.isNotEmpty
+                        ? () {} // disabled while any vote is in-flight
+                        : () async {
+                            final success = await controller.castVote(
+                              petitionId: controller.selectedPetition.value!.id!,
+                              vote: 'no',
+                              comment: commentController.text,
+                            );
+                            if (success) {
+                              Get.back();
+                              CommonToast.showToastSuccess('Vote cast successfully');
+                            } else {
+                              CommonToast.showToastError('Failed to cast vote');
+                            }
+                          },
                   )),
                 ),
               ],
@@ -842,6 +856,130 @@ class _PetitionDetailScreenState extends State<PetitionDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedSaffronGreenButton({
+    required String text,
+    required VoidCallback onPressed,
+    double height = 48,
+    double borderRadius = 14,
+    double fontSize = 15,
+  }) {
+    return _AnimatedSaffronGreenButtonInline(
+      text: text,
+      onPressed: onPressed,
+      height: height,
+      borderRadius: borderRadius,
+      fontSize: fontSize,
+    );
+  }
+}
+
+class _AnimatedSaffronGreenButtonInline extends StatefulWidget {
+  final String text;
+  final VoidCallback onPressed;
+  final double height;
+  final double borderRadius;
+  final double fontSize;
+
+  const _AnimatedSaffronGreenButtonInline({
+    required this.text,
+    required this.onPressed,
+    this.height = 48,
+    this.borderRadius = 14,
+    this.fontSize = 15,
+  });
+
+  @override
+  State<_AnimatedSaffronGreenButtonInline> createState() => _AnimatedSaffronGreenButtonInlineState();
+}
+
+class _AnimatedSaffronGreenButtonInlineState extends State<_AnimatedSaffronGreenButtonInline>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const saffron = Color(0xFFFF9933);
+    const green = Color(0xFF138808);
+
+    return GestureDetector(
+      onTap: widget.onPressed,
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          final glowOffset = _animation.value * 4 + 2;
+          
+          return Container(
+            height: widget.height,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: saffron.withOpacity(0.3 * (1 - _animation.value)),
+                  blurRadius: glowOffset,
+                  spreadRadius: _animation.value * 2,
+                  offset: const Offset(-2, 2),
+                ),
+                BoxShadow(
+                  color: green.withOpacity(0.3 * _animation.value),
+                  blurRadius: glowOffset,
+                  spreadRadius: _animation.value * 2,
+                  offset: const Offset(2, 2),
+                ),
+              ],
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: const [
+                  saffron,
+                  Color(0xFFFFAE59),
+                  Color(0xFF38A129),
+                  green,
+                ],
+                stops: [
+                  0.0,
+                  _animation.value * 0.4,
+                  0.6 + (1 - _animation.value) * 0.4,
+                  1.0,
+                ],
+              ),
+            ),
+            child: Center(
+              child: AppText(
+                title: widget.text,
+                fontSize: widget.fontSize,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
